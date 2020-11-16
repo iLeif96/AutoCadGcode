@@ -59,6 +59,7 @@ namespace AutoCadGcode
                     }
                     // Save the new object to the database
                     acTrans.Commit();
+                    Global.editor.WriteMessage(uEntity.properties.ToString());
                     return uEntity;
                 }
             }
@@ -96,7 +97,6 @@ namespace AutoCadGcode
                     return null;
 
                 props = Properties.FromBuffer(rb);
-                Global.editor.WriteMessage(props.ToString());
                 acTrans.Abort();
                 return props;
             }

@@ -12,62 +12,90 @@ namespace AutoCadGcode
 {
     public class Properties
     {
-        private static string _key = "KEY";
+        private static string _key = "version_2";
         private static int idInc = 0;
         public string KEY 
         {
             get
             {
-                return Convert.ToString(PropertiesList[(int)Order.KEY]);
+                return Convert.ToString(PropertiesList[(int)Fields.KEY]);
             }
             private set
             {
-                PropertiesList[(int)Order.KEY] = _key;
+                PropertiesList[(int)Fields.KEY] = _key;
             }
         }
         public bool Pumping
         {
             get
             {
-                return Convert.ToBoolean(PropertiesList[(int)Order.Pumping]);
+                return Convert.ToBoolean(PropertiesList[(int)Fields.Pumping]);
             }
             set
             {
-                PropertiesList[(int)Order.Pumping] = value;
+                PropertiesList[(int)Fields.Pumping] = value;
+            }
+        }
+
+        public bool Printable
+        {
+            get
+            {
+                return Convert.ToBoolean(PropertiesList[(int)Fields.Printable]);
+            }
+            set
+            {
+                if (value == false)
+                    Order = -1;
+                PropertiesList[(int)Fields.Printable] = value;
+            }
+        }
+
+        public int Order
+        {
+            get
+            {
+                return Convert.ToInt32(PropertiesList[(int)Fields.Order]);
+            }
+            set
+            {
+                PropertiesList[(int)Fields.Order] = value;
             }
         }
         public bool First
         {
             get
             {
-                return Convert.ToBoolean(PropertiesList[(int)Order.First]);
+                return Convert.ToBoolean(PropertiesList[(int)Fields.First]);
             }
             set
             {
-                PropertiesList[(int)Order.First] =  value;
+                PropertiesList[(int)Fields.First] =  value;
             }
         }
         public bool Last
         {
             get
             {
-                return Convert.ToBoolean(PropertiesList[(int)Order.Last]);
+                return Convert.ToBoolean(PropertiesList[(int)Fields.Last]);
             }
             set
             {
-                PropertiesList[(int)Order.Last] = value;
+                PropertiesList[(int)Fields.Last] = value;
             }
         }
 
-        enum Order { KEY, Pumping, First, Last }
+        enum Fields { KEY, Pumping, Printable, Order, First, Last }
 
-        public object[] PropertiesList = new object[Enum.GetValues(typeof(Order)).Length];
+        public object[] PropertiesList = new object[Enum.GetValues(typeof(Fields)).Length];
 
 
         public Properties(bool pump = false)
         {
             KEY = _key;
             Pumping = pump;
+            Printable = true;
+            Order = -1;
             First = false;
             Last = false;
         }
@@ -78,6 +106,8 @@ namespace AutoCadGcode
 
             rb.Add(new TypedValue((int)DxfCode.ExtendedDataRegAppName, Convert.ToString(KEY)));
             rb.Add(new TypedValue((int)DxfCode.ExtendedDataAsciiString, Convert.ToString(Pumping)));
+            rb.Add(new TypedValue((int)DxfCode.ExtendedDataAsciiString, Convert.ToString(Printable)));
+            rb.Add(new TypedValue((int)DxfCode.ExtendedDataAsciiString, Convert.ToString(Order)));
             rb.Add(new TypedValue((int)DxfCode.ExtendedDataAsciiString, Convert.ToString(First)));
             rb.Add(new TypedValue((int)DxfCode.ExtendedDataAsciiString, Convert.ToString(Last)));          
                 
@@ -93,9 +123,11 @@ namespace AutoCadGcode
                 return null;
 
 
-            props.Pumping = Convert.ToBoolean(arr[(int)Order.Pumping].Value);
-            props.First = Convert.ToBoolean(arr[(int)Order.First].Value);
-            props.Last = Convert.ToBoolean(arr[(int)Order.Last].Value);
+            props.Pumping = Convert.ToBoolean(arr[(int)Fields.Pumping].Value);
+            props.Printable = Convert.ToBoolean(arr[(int)Fields.Printable].Value);
+            props.Order = Convert.ToInt32(arr[(int)Fields.Order].Value);
+            props.First = Convert.ToBoolean(arr[(int)Fields.First].Value);
+            props.Last = Convert.ToBoolean(arr[(int)Fields.Last].Value);
 
             return props;
         }
@@ -105,7 +137,7 @@ namespace AutoCadGcode
             string str = "Properties: \n";
 
             for (int i = 0; i < this.PropertiesList.Length; i++)
-                str = str + Enum.GetNames(typeof(Order))[i] + ": " + PropertiesList[i] + ";\n";
+                str = str + Enum.GetNames(typeof(Fields))[i] + ": " + PropertiesList[i] + ";\n";
             
             return str;
         }
