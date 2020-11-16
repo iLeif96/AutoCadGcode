@@ -106,7 +106,7 @@ namespace AutoCadGcode
 
             for (int i = 0; i < this.PropertiesList.Length; i++)
                 str = str + Enum.GetNames(typeof(Order))[i] + ": " + PropertiesList[i] + ";\n";
-
+            
             return str;
         }
     }
