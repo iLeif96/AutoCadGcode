@@ -65,23 +65,23 @@ namespace AutoCadGcode
             }
         }
 
-        public static List<Properties> getXData(List<Entity> list)
+        public static List<UserEntity> getXData(List<Entity> list)
         {
-            List<Properties> outLlist = new List<Properties>();
-            Properties props = new Properties();
+            List<UserEntity> outLlist = new List<UserEntity>();
+            UserEntity uEentity;
 
             // Step through the objects in the selection set
             foreach (Entity obj in list)
             {
-                props = getXData(obj);
-                if (props != null)
-                    outLlist.Add(props);
+                uEentity = getXData(obj);
+                if (uEentity != null)
+                    outLlist.Add(uEentity);
             }
 
             return outLlist;    
         }
 
-        public static Properties getXData(Entity entity)
+        public static UserEntity getXData(Entity entity)
         {
             using (Transaction acTrans = Global.dB.TransactionManager.StartTransaction())
             {
@@ -98,7 +98,7 @@ namespace AutoCadGcode
 
                 props = Properties.FromBuffer(rb);
                 acTrans.Abort();
-                return props;
+                return new UserEntity(_entity, props);
             }
         }
     }

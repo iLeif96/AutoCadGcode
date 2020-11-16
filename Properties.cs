@@ -46,8 +46,16 @@ namespace AutoCadGcode
             set
             {
                 if (value == false)
+                {
                     Order = -1;
-                PropertiesList[(int)Fields.Printable] = value;
+                }
+                else
+                {
+                    First = false;
+                    Last = false;
+                }
+
+                    PropertiesList[(int)Fields.Printable] = value;
             }
         }
 
@@ -70,7 +78,9 @@ namespace AutoCadGcode
             }
             set
             {
-                PropertiesList[(int)Fields.First] =  value;
+                if (value == true)
+                    Last = false;
+                PropertiesList[(int)Fields.First] = value;
             }
         }
         public bool Last
@@ -81,6 +91,8 @@ namespace AutoCadGcode
             }
             set
             {
+                if (value == true)
+                    First = false;
                 PropertiesList[(int)Fields.Last] = value;
             }
         }
@@ -95,7 +107,7 @@ namespace AutoCadGcode
             KEY = _key;
             Pumping = pump;
             Printable = true;
-            Order = -1;
+            Order = 0;
             First = false;
             Last = false;
         }

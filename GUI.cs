@@ -7,27 +7,70 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Drawing;
 using System.Windows.Media.Imaging;
+using Autodesk.AutoCAD.DatabaseServices;
+using Autodesk.AutoCAD.EditorInput;
 
 namespace AutoCadGcode
 {
     public class GUI
     {
-        RibbonButton setPumpingTrueButton = new RibbonButton();
-        RibbonButton setPumpingFalseButton = new RibbonButton();
-        RibbonPanelSource rbPanelPumpingSource = new RibbonPanelSource();
-        RibbonPanel rbPumpingPanel = new RibbonPanel();
+        public UserEntity activeEntity = null;
+        public int order = -1;
+        
+        protected RibbonButton setPumpingTrueButton = new RibbonButton();
+        protected RibbonButton setPumpingFalseButton = new RibbonButton();
+        protected RibbonSpinner setOrderSpinner = new RibbonSpinner();
+        protected RibbonButton setOrderButton = new RibbonButton();
+        protected RibbonPanelSource rbPrintablePanelSource = new RibbonPanelSource();
+        protected RibbonPanel rbPrintablePanel = new RibbonPanel();
 
-        RibbonButton validateEntityes = new RibbonButton();
-        RibbonPanelSource rbPanelValidateSource = new RibbonPanelSource();
-        RibbonPanel rbValidatePanel = new RibbonPanel();
+        protected RibbonButton setFirstButton = new RibbonButton();
+        protected RibbonButton setLastButton = new RibbonButton();
+        private RibbonPanelSource rbNotPrintablePanelSource = new RibbonPanelSource();
+        private RibbonPanel rbNotPrintablePanel = new RibbonPanel();
 
-        RibbonTab rbTab = new RibbonTab();
-        RibbonControl rbCntrl = ComponentManager.Ribbon;
+        protected RibbonButton validateEntityesButton = new RibbonButton();
+        private RibbonPanelSource rbValidatePanelSource = new RibbonPanelSource();
+        private RibbonPanel rbValidatePanel = new RibbonPanel();
+
+        private RibbonTab rbTab = new RibbonTab();
+        private RibbonControl rbCntrl = ComponentManager.Ribbon;
 
         public GUI()
         {
             CreateGUI();
+            Global.doc.ImpliedSelectionChanged += OnChangeSelectedObject;
         }
+
+        private void OnChangeSelectedObject(object sender, EventArgs e)
+        {
+            
+            PromptSelectionResult res = Global.editor.SelectImplied();
+            if (res.Value != null)
+            { 
+                var list = API.ListFromSelecion(res);
+                if (list != null && list.Count > 0)
+                    activeEntity = API.GetXData(list).Last<UserEntity>();
+            }
+            else
+                activeEntity = null;
+
+            //if (e.Selection.Count > 0)
+            //    this.activeEntity = API.FindUserEntityByObjectId(e.Selection[e.Selection.Count - 1].ObjectId);
+            //else
+            //    this.activeEntity = null;
+
+            if (activeEntity != null)
+            {
+                this.setOrderSpinner.Value = activeEntity.properties.Order;
+            }
+            else
+            {
+                this.setOrderSpinner.Value = 0;
+            }
+
+        }
+        
 
         private void CreateGUI()
         {
@@ -37,56 +80,96 @@ namespace AutoCadGcode
             setPumpingTrueButton.Id = "_setPumpingTrueButton";
             setPumpingTrueButton.CommandHandler = new SetPumpingTrueHandler();
             setPumpingTrueButton.Size = RibbonItemSize.Standard;
-            //setPumpingTrueButton.Width = 32;
-            //setPumpingTrueButton.Height = 32;
             setPumpingTrueButton.Text = "С бетоном";
             setPumpingTrueButton.ShowText = true;
-            //setPumpingTrueButton.Image = new BitmapImage(new Uri("AutoCadGcode/ico/PumpingTrue_32.png", UriKind.Relative));
-            //setPumpingTrueButton.ShowImage = true;
 
 
             setPumpingFalseButton.Id = "_setPumpingFalseButton";
             setPumpingFalseButton.CommandHandler = new SetPumpingFalseHandler();
             setPumpingFalseButton.Size = RibbonItemSize.Standard;
-            //setPumpingFalseButton.Width = 32;
-            //setPumpingFalseButton.Height = 32;
             setPumpingFalseButton.Text = "Без бетона";
             setPumpingFalseButton.ShowText = true;
-            //setPumpingFalseButton.Image = new BitmapImage(new Uri("pack://application:,,,AutoCadGcode;component/ico/PumpingFalse_32.png"));
-            //setPumpingFalseButton.ShowImage = true;
 
-            rbPanelPumpingSource.Title = "Set Pumping";
-            rbPanelPumpingSource.Items.Add(setPumpingTrueButton);
-            rbPanelPumpingSource.Items.Add(new RibbonSeparator());
-            rbPanelPumpingSource.Items.Add(setPumpingFalseButton);
-            rbPumpingPanel.Source = rbPanelPumpingSource;
+            setOrderSpinner.Id = "_setOrder";
+            setOrderSpinner.Size = RibbonItemSize.Standard;
+            setOrderSpinner.Text = "Порядок печати";
+            setOrderSpinner.ShowText = true;
+            setOrderSpinner.ValueChanged += SetOrderHandler;
+            setOrderSpinner.Value = 0;
+            setOrderSpinner.Minimum = -1;
+            setOrderSpinner.Maximum = int.MaxValue;
+            setOrderSpinner.Width = 150;
+            setOrderSpinner.IsEditable = true;
+            setOrderSpinner.IsEnabled = true;
+
+            setOrderButton.Id = "_setOrderButton";
+            setOrderButton.CommandHandler = new SetOrderHandler();
+            setOrderButton.Size = RibbonItemSize.Standard;
+            setOrderButton.Text = "Применить";
+            setOrderButton.ShowText = true;
+
+            rbPrintablePanelSource.Title = "Параметры печатных линий";
+            rbPrintablePanelSource.Items.Add(setPumpingTrueButton);
+            rbPrintablePanelSource.Items.Add(new RibbonSeparator());
+            rbPrintablePanelSource.Items.Add(setPumpingFalseButton);
+            rbPrintablePanelSource.Items.Add(new RibbonRowBreak());
+            rbPrintablePanelSource.Items.Add(setOrderSpinner);
+            rbPrintablePanelSource.Items.Add(setOrderButton);
+
+            rbPrintablePanel.Source = rbPrintablePanelSource;
+
+            /**
+             * Not printable parameters
+             */
+
+            setFirstButton.Id = "_setFirst";
+            setFirstButton.CommandHandler = new SetFirstHandler();
+            setFirstButton.Size = RibbonItemSize.Standard;
+            setFirstButton.Text = "Первая";
+            setFirstButton.ShowText = true;
+
+            setLastButton.Id = "_setLast";
+            setLastButton.CommandHandler = new SetLastHandler();
+            setLastButton.Size = RibbonItemSize.Standard;
+            setLastButton.Text = "Последняя";
+            setLastButton.ShowText = true;
+
+            rbNotPrintablePanelSource.Title = "Параметры непечатных линий";
+            rbNotPrintablePanelSource.Items.Add(setFirstButton);
+            rbNotPrintablePanelSource.Items.Add(new RibbonSeparator());
+            rbNotPrintablePanelSource.Items.Add(setLastButton);
+            rbNotPrintablePanel.Source = rbNotPrintablePanelSource;
 
             /**
              * Validation and building
              */
 
-            validateEntityes.Id = "_validateEntityesButton";
-            validateEntityes.CommandHandler = new ValidateEntityesHandler();
-            validateEntityes.Size = RibbonItemSize.Standard;
-            //setPumpingTrueButton.Width = 32;
-            //setPumpingTrueButton.Height = 32;
-            validateEntityes.Text = "Валидация";
-            validateEntityes.ShowText = true;
+            validateEntityesButton.Id = "_validateEntityesButton";
+            validateEntityesButton.CommandHandler = new ValidateEntityesHandler();
+            validateEntityesButton.Size = RibbonItemSize.Standard;
+            validateEntityesButton.Text = "Валидация";
+            validateEntityesButton.ShowText = true;
 
-            rbPanelValidateSource.Title = "Validation";
-            rbPanelValidateSource.Items.Add(validateEntityes);
-            rbValidatePanel.Source = rbPanelValidateSource;
+            rbValidatePanelSource.Title = "Валидация и запуск";
+            rbValidatePanelSource.Items.Add(validateEntityesButton);
+            rbValidatePanel.Source = rbValidatePanelSource;
 
             rbTab.Title = "Trace Maker";
             rbTab.Id = "_TraceMakerTab";
 
-            rbTab.Panels.Add(rbPumpingPanel);
+            rbTab.Panels.Add(rbPrintablePanel);
+            rbTab.Panels.Add(rbNotPrintablePanel);
             rbTab.Panels.Add(rbValidatePanel);
 
 
             rbCntrl.Tabs.Add(rbTab);
 
             rbTab.IsActive = true;
+        }
+
+        private void SetOrderHandler(object sender, System.ComponentModel.PropertyChangedEventArgs e)
+        {
+            order = Convert.ToInt32((sender as RibbonSpinner).TextValue);
         }
     }
 
@@ -125,6 +208,72 @@ namespace AutoCadGcode
         public void Execute(object e)
         {
             API.SetPumpingFalse();
+        }
+    }
+
+    public class SetOrder : System.Windows.Input.ICommand
+    {
+
+        public event EventHandler CanExecuteChanged;
+
+        public bool CanExecute(object e)
+        {
+            return true;
+        }
+
+        public void Execute(object e)
+        {
+            API.SetFirst();
+        }
+    }
+
+    public class SetOrderHandler : System.Windows.Input.ICommand
+    {
+
+        public event EventHandler CanExecuteChanged;
+
+        public bool CanExecute(object e)
+        {
+            return true;
+        }
+
+        public void Execute(object e)
+        {
+            var prop = new Properties();
+            prop.Order = Global.gui.order;
+            API.SetOrder(prop);
+        }
+    }
+
+    public class SetFirstHandler : System.Windows.Input.ICommand
+    {
+
+        public event EventHandler CanExecuteChanged;
+
+        public bool CanExecute(object e)
+        {
+            return true;
+        }
+
+        public void Execute(object e)
+        {
+            API.SetFirst();
+        }
+    }
+
+    public class SetLastHandler : System.Windows.Input.ICommand
+    {
+
+        public event EventHandler CanExecuteChanged;
+
+        public bool CanExecute(object e)
+        {
+            return true;
+        }
+
+        public void Execute(object e)
+        {
+            API.SetLast();
         }
     }
 

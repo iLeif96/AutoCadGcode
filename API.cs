@@ -15,12 +15,14 @@ namespace AutoCadGcode
         public delegate void PumpingChangeHandler(UserEntity userEntity);
         public delegate void FirstChangeHandler(UserEntity userEntity);
         public delegate void LastChangeHandler(UserEntity userEntity);
+        public delegate void OrderChangeHandler(UserEntity userEntity);
         public delegate void DocumentLoadedHandler(List<Entity> list = null);
         public delegate void EntityesValidateHandler();
 
         public static event PumpingChangeHandler PumpingChangeEvent;
         public static event FirstChangeHandler FirstChangeEvent;
         public static event LastChangeHandler LastChangeEvent;
+        public static event OrderChangeHandler OrderChangeEvent;
         public static event DocumentLoadedHandler DocumentLoadedEvent;
         public static event EntityesValidateHandler EntityesValidateEvent;
 
@@ -41,100 +43,145 @@ namespace AutoCadGcode
          */
 
         [CommandMethod("SETFIRST", CommandFlags.UsePickSet)]
-        public void SetFirst()
+        public static void SetFirst(Entity entity = null)
         {
-            PromptSelectionResult acSSPrompt = Global.doc.Editor.GetSelection();
-            List<Entity> list = ListFromSelecion(acSSPrompt);
-            Properties props;
+            List<Entity> list = null;
+            if (entity == null)
+            {
+                PromptSelectionResult acSSPrompt = Global.doc.Editor.GetSelection();
+                list = ListFromSelecion(acSSPrompt);
+                entity = list.Last<Entity>();
+            }
 
-            if (list.Count != 1)
-                return;
+            UserEntity uEntity = XDataManage.getXData(entity);
 
-            List<Properties> resList = XDataManage.getXData(list);
+            if (uEntity == null)
+                uEntity = new UserEntity(entity, new Properties());
 
-            if (resList.Count != 1)
-                props = new Properties();
-            else
-                props = resList[0];
+            uEntity.properties.Printable = false;
+            uEntity.properties.Last = true;
 
-            props.Last = false;
-            props.First = true;
+            uEntity = XDataManage.setXData(uEntity);
 
-            UserEntity userEntity = XDataManage.setXData(new UserEntity(list[0], props));
-
-            FirstChangeEvent?.Invoke(userEntity);
+            LastChangeEvent?.Invoke(uEntity);
         }
 
         [CommandMethod("SETLAST", CommandFlags.UsePickSet)]
-        public static void SetLast()
+        public static void SetLast(Entity entity = null)
         {
-            PromptSelectionResult acSSPrompt = Global.doc.Editor.GetSelection();
-            List<Entity> list = ListFromSelecion(acSSPrompt);
-            Properties props;
+            List<Entity> list = null;
+            if (entity == null)
+            {
+                PromptSelectionResult acSSPrompt = Global.doc.Editor.GetSelection();
+                list = ListFromSelecion(acSSPrompt);
+                entity = list.Last<Entity>();
+            }
 
-            if (list.Count != 1)
-                return;
+            UserEntity uEntity = XDataManage.getXData(entity);
 
-            List<Properties> resList = XDataManage.getXData(list);
+            if (uEntity == null)
+                uEntity = new UserEntity(entity, new Properties());
 
-            if (resList.Count != 1)
-                props = new Properties();
-            else
-                props = resList[0];
+            uEntity.properties.Printable = false;
+            uEntity.properties.Last = true;
 
-            props.First = false;
-            props.Last = true;
+            uEntity = XDataManage.setXData(uEntity);
 
-            UserEntity userEntity = XDataManage.setXData(new UserEntity(list[0], props));
+            LastChangeEvent?.Invoke(uEntity);
+        }
 
-            LastChangeEvent?.Invoke(userEntity);
+        [CommandMethod("SETORDER", CommandFlags.UsePickSet)]
+        public static void SetOrder(Properties propertiesOrder, Entity entity = null)
+        {
+            int order = propertiesOrder.Order;
+            List<Entity> list = null;
+            
+            if (entity == null)
+            {
+                PromptSelectionResult acSSPrompt = Global.doc.Editor.GetSelection();
+                list = ListFromSelecion(acSSPrompt);
+                entity = list.Last<Entity>();
+            }
+
+            if (order < 0)
+            {
+                PromptIntegerResult promptInteger =
+                    Global.doc.Editor.GetInteger(new PromptIntegerOptions(
+                        "Пожалуйста, введите порядковый номер линии в чертеже: "));
+                order = promptInteger.Value;
+                if (order < 0)
+                {
+                    Global.editor.WriteMessage("Порядковый номер не может быть меньше нуля\n");
+                    return;
+                }
+            }
+
+            UserEntity userEntity = XDataManage.getXData(entity);
+
+            if (userEntity == null)
+                userEntity = new UserEntity(entity, new Properties());
+
+            userEntity.properties.Printable = true;
+            userEntity.properties.Order = order;
+
+            userEntity = XDataManage.setXData(userEntity);
+
+            OrderChangeEvent?.Invoke(userEntity);
         }
 
         [CommandMethod("SETPUMPINGTRUE", CommandFlags.UsePickSet)]
-        public static void SetPumpingTrue()
+        public static void SetPumpingTrue(List<Entity> list = null)
         {
-            PromptSelectionResult acSSPrompt = Global.doc.Editor.GetSelection();
-            List<Entity> list = ListFromSelecion(acSSPrompt);
-            Properties props;
+            if (list == null)
+            {
+                PromptSelectionResult acSSPrompt = Global.doc.Editor.GetSelection();
+                list = ListFromSelecion(acSSPrompt);
+            }
+            UserEntity uEntity;
 
             if (list.Count < 1)
                 return;
 
             foreach (Entity entity in list)
             {
-                props = XDataManage.getXData(entity);
-                if (props == null)
-                    props = new Properties();
+                uEntity = XDataManage.getXData(entity);
+                if (uEntity == null)
+                    uEntity = new UserEntity(entity, new Properties());
 
-                props.Pumping = true;
+                uEntity.properties.Printable = true;
+                uEntity.properties.Pumping = true;
 
-                UserEntity userEntity = XDataManage.setXData(new UserEntity(entity, props));
+                uEntity = XDataManage.setXData(uEntity);
 
-                PumpingChangeEvent?.Invoke(userEntity);
+                PumpingChangeEvent?.Invoke(uEntity);
             }
         }
 
         [CommandMethod("SETPUMPINGFALSE", CommandFlags.UsePickSet)]
-        public static void SetPumpingFalse()
+        public static void SetPumpingFalse(List<Entity> list = null)
         {
-            PromptSelectionResult acSSPrompt = Global.doc.Editor.GetSelection();
-            List<Entity> list = ListFromSelecion(acSSPrompt);
-            Properties props;
+            if (list == null)
+            {
+                PromptSelectionResult acSSPrompt = Global.doc.Editor.GetSelection();
+                list = ListFromSelecion(acSSPrompt);
+            }
+            UserEntity uEntity;
 
             if (list.Count < 1)
                 return;
 
             foreach (Entity entity in list)
             {
-                props = XDataManage.getXData(entity);
-                if (props == null)
-                    props = new Properties();
+                uEntity = XDataManage.getXData(entity);
+                if (uEntity == null)
+                    uEntity = new UserEntity(entity, new Properties());
 
-                props.Pumping = false;
+                uEntity.properties.Printable = true;
+                uEntity.properties.Pumping = false;
 
-                UserEntity userEntity = XDataManage.setXData(new UserEntity(entity, props));
+                uEntity = XDataManage.setXData(uEntity);
 
-                PumpingChangeEvent?.Invoke(userEntity);
+                PumpingChangeEvent?.Invoke(uEntity);
             }
         }
 
@@ -154,7 +201,7 @@ namespace AutoCadGcode
         }
 
         [CommandMethod("GETXDATA", CommandFlags.UsePickSet)]
-        public static void GetXData(List<Entity> list = null)
+        public static List<UserEntity> GetXData(List<Entity> list = null)
         {
             if (list == null)
             {
@@ -162,7 +209,7 @@ namespace AutoCadGcode
                 list = ListFromSelecion(acSSPrompt);
             }
 
-            XDataManage.getXData(list);
+            return XDataManage.getXData(list);
         }
 
         [CommandMethod("VALIDATEENTITYES")]
@@ -188,7 +235,7 @@ namespace AutoCadGcode
         /**
          * Addition functions
          */
-        private static List<Entity> ListFromSelecion(PromptSelectionResult acSSPrompt)
+        public static List<Entity> ListFromSelecion(PromptSelectionResult acSSPrompt)
         {
 
             List<Entity> list = new List<Entity>();
@@ -214,6 +261,18 @@ namespace AutoCadGcode
                 new System.Exception("There is problem in selection");
 
             return list;
+        }
+
+        public static UserEntity FindUserEntityByObjectId(ObjectId objectId)
+        {
+            UserEntity uEntity = null;
+            using (Transaction acTrans = Global.dB.TransactionManager.StartTransaction())
+            {
+                var ent = acTrans.GetObject(objectId, OpenMode.ForRead) as Entity;
+                uEntity = XDataManage.getXData(ent);
+                acTrans.Abort();
+            }
+            return uEntity;
         }
     }
 }

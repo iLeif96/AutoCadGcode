@@ -47,7 +47,7 @@ namespace AutoCadGcode
                     {
                         using (Entity temp = acTrans.GetObject(uEntity.ObjectId, OpenMode.ForWrite) as Entity)
                         {
-                            if (uEntity.properties.First == true || uEntity.properties.Last == true)
+                            if (uEntity.properties.Printable == false)
                                 temp.Color = Color.FromRgb(150, 150, 150); //gray
                             else if (uEntity.properties.Pumping == true)
                                 temp.Color = Color.FromRgb(50, 200, 50); //green
@@ -72,19 +72,16 @@ namespace AutoCadGcode
             if (entity == null)
                 return;
 
-            Properties props = XDataManage.getXData(entity);
-            UserEntity userEntity;
+            UserEntity uEntity = XDataManage.getXData(entity);
 
-            if (props == null)
-                userEntity = XDataManage.setXData(new UserEntity(entity, new Properties()));
-            else
-                userEntity = new UserEntity(entity, props);
+            if (uEntity == null)
+                uEntity = XDataManage.setXData(new UserEntity(entity, new Properties()));
 
             if (!Global.uEntitys.ContainsKey(entity.ObjectId))
-                Global.uEntitys.Add(userEntity.ObjectId, userEntity);
+                Global.uEntitys.Add(uEntity.ObjectId, uEntity);
             else
             {
-                Global.uEntitys[userEntity.ObjectId] = userEntity;
+                Global.uEntitys[uEntity.ObjectId] = uEntity;
                 Global.editor.WriteMessage("Warrning. Object already stored");
             }
         }
