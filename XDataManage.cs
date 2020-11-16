@@ -15,11 +15,20 @@ namespace AutoCadGcode
     public class XDataManage
     {
 
-        public delegate void PropertiesChangeHandler(Entity entity, Properties properties);
+        public delegate void PropertiesChangeHandler(UserEntity userEntity);
         public static event PropertiesChangeHandler PropertiesChangeEvent;
 
         private const string KEY = "GCODE";
-        public static void setXData(List<Entity> list, Properties props)
+        public static List<UserEntity> setXData(List<UserEntity> uEntityes)
+        {
+            // Step through the objects in the set
+            foreach (UserEntity uEntity in uEntityes)
+                setXData(uEntity);
+            
+            return uEntityes;
+        }
+
+        public static UserEntity setXData(UserEntity uEntity)
         {
             using (DocumentLock docLock = Global.doc.LockDocument())
             {
@@ -30,80 +39,66 @@ namespace AutoCadGcode
                     acRegAppTbl = acTrans.GetObject(Global.dB.RegAppTableId, OpenMode.ForRead) as RegAppTable;
 
                     // Check to see if the Registered Applications table record for the custom app exists
-                    if (acRegAppTbl.Has(props.KEY) == false)
+                    if (acRegAppTbl.Has(uEntity.properties.KEY) == false)
                     {
                         using (RegAppTableRecord acRegAppTblRec = new RegAppTableRecord())
                         {
-                            acRegAppTblRec.Name = props.KEY;
-
+                            acRegAppTblRec.Name = uEntity.properties.KEY;
                             acTrans.GetObject(Global.dB.RegAppTableId, OpenMode.ForWrite);
                             acRegAppTbl.Add(acRegAppTblRec);
                             acTrans.AddNewlyCreatedDBObject(acRegAppTblRec, true);
                         }
                     }
 
-                    // Step through the objects in the selection set
-                    foreach (Entity obj in list)
+                    // Append the extended data to each object
+                    Entity entity = acTrans.GetObject(uEntity.ObjectId, OpenMode.ForWrite) as Entity;
+                    using (ResultBuffer buffer = uEntity.properties.ToBuffer())
                     {
-                        // Append the extended data to each object
-                        Entity entity = acTrans.GetObject(obj.ObjectId, OpenMode.ForWrite) as Entity;
-                        using (ResultBuffer buffer = props.ToBuffer())
-                        {
-                            entity.XData = buffer;
-
-                            PropertiesChangeEvent?.Invoke(entity, props);
-                        }
+                        entity.XData = buffer;
+                        PropertiesChangeEvent?.Invoke(uEntity);
                     }
-
                     // Save the new object to the database
                     acTrans.Commit();
+                    return uEntity;
                 }
             }
         }
 
         public static List<Properties> getXData(List<Entity> list)
         {
+            List<Properties> outLlist = new List<Properties>();
+            Properties props = new Properties();
+
+            // Step through the objects in the selection set
+            foreach (Entity obj in list)
+            {
+                props = getXData(obj);
+                if (props != null)
+                    outLlist.Add(props);
+            }
+
+            return outLlist;    
+        }
+
+        public static Properties getXData(Entity entity)
+        {
             using (Transaction acTrans = Global.dB.TransactionManager.StartTransaction())
             {
-                string msgstr = "";
-
-                List<Properties> outLlist = new List<Properties>();
                 Properties props = new Properties();
 
-                // Step through the objects in the selection set
-                foreach (Entity obj in list)
-                {
-                    Entity entity = acTrans.GetObject(obj.ObjectId, OpenMode.ForRead) as Entity;
+                Entity _entity = acTrans.GetObject(entity.ObjectId, OpenMode.ForRead) as Entity;
 
-                    // Get the extended data attached to each object for MY_APP
-                    ResultBuffer rb = entity.GetXDataForApplication(props.KEY);
+                // Get the extended data attached to each object for MY_APP
+                ResultBuffer rb = _entity.GetXDataForApplication(props.KEY);
 
-                    // Make sure the Xdata is not empty
-                    if (rb != null)
-                    {
-                        props = Properties.FromBuffer(rb);
-                        outLlist.Add(props);
-                        // Get the values in the xdata and convert to Properties
-                        foreach (TypedValue typeVal in rb)
-                        {
-                            msgstr = msgstr + "\n" + typeVal.TypeCode.ToString() + ":" + typeVal.Value;
-                        }
-                    }
-                    else
-                    {
-                        msgstr = "NONE";
-                    }
+                // Make sure the Xdata is not empty
+                if (rb == null)
+                    return null;
 
-                    // Display the values returned
-                    Global.editor.WriteMessage(XDataManage.KEY + " xdata on " + entity.GetType().ToString() + ":\n" + msgstr);
-
-                    msgstr = "";
-                }
-
-
+                props = Properties.FromBuffer(rb);
+                Global.editor.WriteMessage(props.ToString());
                 acTrans.Abort();
-
-                return outLlist;
+                return props;
             }
         }
     }

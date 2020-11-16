@@ -20,6 +20,8 @@ namespace AutoCadGcode
 
         public static Database dB = Application.DocumentManager.MdiActiveDocument.Database;
 
+        public static Autodesk.AutoCAD.DatabaseServices.TransactionManager tM = dB.TransactionManager;
+
         public static Document doc = Application.DocumentManager.MdiActiveDocument;
 
         public static Dictionary<ObjectId, UserEntity> uEntitys = new Dictionary<ObjectId, UserEntity>();

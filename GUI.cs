@@ -14,8 +14,13 @@ namespace AutoCadGcode
     {
         RibbonButton setPumpingTrueButton = new RibbonButton();
         RibbonButton setPumpingFalseButton = new RibbonButton();
-        RibbonPanelSource rbPanelSource = new RibbonPanelSource();
-        RibbonPanel rbPanel = new RibbonPanel();
+        RibbonPanelSource rbPanelPumpingSource = new RibbonPanelSource();
+        RibbonPanel rbPumpingPanel = new RibbonPanel();
+
+        RibbonButton validateEntityes = new RibbonButton();
+        RibbonPanelSource rbPanelValidateSource = new RibbonPanelSource();
+        RibbonPanel rbValidatePanel = new RibbonPanel();
+
         RibbonTab rbTab = new RibbonTab();
         RibbonControl rbCntrl = ComponentManager.Ribbon;
 
@@ -26,6 +31,9 @@ namespace AutoCadGcode
 
         private void CreateGUI()
         {
+            /**
+             * Properties
+             */
             setPumpingTrueButton.Id = "_setPumpingTrueButton";
             setPumpingTrueButton.CommandHandler = new SetPumpingTrueHandler();
             setPumpingTrueButton.Size = RibbonItemSize.Standard;
@@ -47,20 +55,34 @@ namespace AutoCadGcode
             //setPumpingFalseButton.Image = new BitmapImage(new Uri("pack://application:,,,AutoCadGcode;component/ico/PumpingFalse_32.png"));
             //setPumpingFalseButton.ShowImage = true;
 
+            rbPanelPumpingSource.Title = "Set Pumping";
+            rbPanelPumpingSource.Items.Add(setPumpingTrueButton);
+            rbPanelPumpingSource.Items.Add(new RibbonSeparator());
+            rbPanelPumpingSource.Items.Add(setPumpingFalseButton);
+            rbPumpingPanel.Source = rbPanelPumpingSource;
 
+            /**
+             * Validation and building
+             */
 
+            validateEntityes.Id = "_validateEntityesButton";
+            validateEntityes.CommandHandler = new ValidateEntityesHandler();
+            validateEntityes.Size = RibbonItemSize.Standard;
+            //setPumpingTrueButton.Width = 32;
+            //setPumpingTrueButton.Height = 32;
+            validateEntityes.Text = "Валидация";
+            validateEntityes.ShowText = true;
 
-            rbPanelSource.Title = "Set Pumping";
-            rbPanelSource.Items.Add(setPumpingTrueButton);
-            rbPanelSource.Items.Add(new RibbonSeparator());
-            rbPanelSource.Items.Add(setPumpingFalseButton);
-
-            rbPanel.Source = rbPanelSource;
+            rbPanelValidateSource.Title = "Validation";
+            rbPanelValidateSource.Items.Add(validateEntityes);
+            rbValidatePanel.Source = rbPanelValidateSource;
 
             rbTab.Title = "Trace Maker";
             rbTab.Id = "_TraceMakerTab";
 
-            rbTab.Panels.Add(rbPanel);
+            rbTab.Panels.Add(rbPumpingPanel);
+            rbTab.Panels.Add(rbValidatePanel);
+
 
             rbCntrl.Tabs.Add(rbTab);
 
@@ -103,6 +125,22 @@ namespace AutoCadGcode
         public void Execute(object e)
         {
             API.SetPumpingFalse();
+        }
+    }
+
+    public class ValidateEntityesHandler : System.Windows.Input.ICommand
+    {
+
+        public event EventHandler CanExecuteChanged;
+
+        public bool CanExecute(object e)
+        {
+            return true;
+        }
+
+        public void Execute(object e)
+        {
+            API.ValidateEntityes();
         }
     }
 }

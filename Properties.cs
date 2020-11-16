@@ -22,7 +22,7 @@ namespace AutoCadGcode
             }
             private set
             {
-                PropertiesList.Insert((int)Order.KEY, _key);
+                PropertiesList[(int)Order.KEY] = _key;
             }
         }
         public bool Pumping
@@ -33,7 +33,7 @@ namespace AutoCadGcode
             }
             set
             {
-                PropertiesList.Insert((int)Order.Pumping, value);
+                PropertiesList[(int)Order.Pumping] = value;
             }
         }
         public bool First
@@ -44,7 +44,7 @@ namespace AutoCadGcode
             }
             set
             {
-                PropertiesList.Insert((int)Order.First, value);
+                PropertiesList[(int)Order.First] =  value;
             }
         }
         public bool Last
@@ -55,13 +55,13 @@ namespace AutoCadGcode
             }
             set
             {
-                PropertiesList.Insert((int)Order.Last, value);
+                PropertiesList[(int)Order.Last] = value;
             }
         }
 
         enum Order { KEY, Pumping, First, Last }
 
-        public List<object> PropertiesList =  new List<object>();
+        public object[] PropertiesList = new object[Enum.GetValues(typeof(Order)).Length];
 
 
         public Properties(bool pump = false)
@@ -98,6 +98,16 @@ namespace AutoCadGcode
             props.Last = Convert.ToBoolean(arr[(int)Order.Last].Value);
 
             return props;
+        }
+
+        public override string ToString()
+        {
+            string str = "Properties: \n";
+
+            for (int i = 0; i < this.PropertiesList.Length; i++)
+                str = str + Enum.GetNames(typeof(Order))[i] + ": " + PropertiesList[i] + ";\n";
+
+            return str;
         }
     }
 }
