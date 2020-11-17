@@ -151,6 +151,7 @@ namespace AutoCadGcode
         private void CreateHandling()
         {
             Global.doc.ImpliedSelectionChanged += OnChangeSelectedObjectHandler;
+            XDataManage.PropertiesChangeEvent += OnChangeParametersHandler;
         }
 
         //Function for changing ribbon items attributes after incoming properties recived
@@ -189,6 +190,13 @@ namespace AutoCadGcode
             }
         }
         
+        //Handler for situation then entityes lost focus after changing parameter
+        private void OnChangeParametersHandler(UserEntity uEntity)
+        {
+            if (activeEntity == null) //Check for selected entity
+                virtualProperies = uEntity.properties;
+        }
+
         //Handler for transfer value from orderSpinner to virtualProperies
         private void SetOrderHandler(object sender, System.ComponentModel.PropertyChangedEventArgs e)
         {
