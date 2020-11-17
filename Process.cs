@@ -24,7 +24,7 @@ namespace AutoCadGcode
         private void CreateHandling()
         {
             XDataManage.PropertiesChangeEvent += OnChangeProperties;
-            API.EntityesValidateEvent += OnValidateEntityes;
+            API.EntitiesValidateEvent += OnValidateEntities;
             Global.dB.ObjectAppended += OnDatabaseChanged;
 
             //API.DocumentLoadedEvent += SetUserEntitys;
@@ -36,7 +36,7 @@ namespace AutoCadGcode
             validation.isValidated = false;
         }
 
-        public void OnValidateEntityes()
+        public void OnValidateEntities()
         {
             try
             {

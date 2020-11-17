@@ -17,7 +17,7 @@ namespace AutoCadGcode
         public delegate void LastChangeHandler(UserEntity userEntity);
         public delegate void OrderChangeHandler(UserEntity userEntity);
         public delegate void DocumentLoadedHandler(List<Entity> list = null);
-        public delegate void EntityesValidateHandler();
+        public delegate void EntitiesValidateHandler();
         public delegate void BuildGcodeHandler();
 
         public static event PumpingChangeHandler PumpingChangeEvent;
@@ -25,7 +25,7 @@ namespace AutoCadGcode
         public static event LastChangeHandler LastChangeEvent;
         public static event OrderChangeHandler OrderChangeEvent;
         public static event DocumentLoadedHandler DocumentLoadedEvent;
-        public static event EntityesValidateHandler EntityesValidateEvent;
+        public static event EntitiesValidateHandler EntitiesValidateEvent;
         public static event BuildGcodeHandler BuildGcodeEvent;
 
 
@@ -52,6 +52,8 @@ namespace AutoCadGcode
             {
                 PromptSelectionResult acSSPrompt = Global.doc.Editor.GetSelection();
                 list = ListFromSelecion(acSSPrompt);
+                if (list.Count == 0)
+                    return;
                 entity = list.Last<Entity>();
             }
 
@@ -61,7 +63,7 @@ namespace AutoCadGcode
                 uEntity = new UserEntity(entity, new Properties());
 
             uEntity.properties.Printable = false;
-            uEntity.properties.Last = true;
+            uEntity.properties.First = true;
 
             uEntity = XDataManage.setXData(uEntity);
 
@@ -76,6 +78,8 @@ namespace AutoCadGcode
             {
                 PromptSelectionResult acSSPrompt = Global.doc.Editor.GetSelection();
                 list = ListFromSelecion(acSSPrompt);
+                if (list.Count == 0)
+                    return;
                 entity = list.Last<Entity>();
             }
 
@@ -102,6 +106,9 @@ namespace AutoCadGcode
 
             PromptSelectionResult acSSPrompt = Global.doc.Editor.GetSelection();
             List<Entity> list = ListFromSelecion(acSSPrompt);
+            if (list.Count == 0)
+                return;
+
             if (order < 0)
             {
                 PromptIntegerOptions pOpts = new PromptIntegerOptions(
@@ -139,6 +146,8 @@ namespace AutoCadGcode
             {
                 PromptSelectionResult acSSPrompt = Global.doc.Editor.GetSelection();
                 list = ListFromSelecion(acSSPrompt);
+                if (list.Count == 0)
+                    return;
             }
             UserEntity uEntity;
 
@@ -167,6 +176,8 @@ namespace AutoCadGcode
             {
                 PromptSelectionResult acSSPrompt = Global.doc.Editor.GetSelection();
                 list = ListFromSelecion(acSSPrompt);
+                if (list.Count == 0)
+                    return;
             }
             UserEntity uEntity;
 
@@ -195,6 +206,8 @@ namespace AutoCadGcode
             {
                 PromptSelectionResult acSSPrompt = Global.doc.Editor.GetSelection();
                 list = ListFromSelecion(acSSPrompt);
+                if (list.Count == 0)
+                    return;
             }
 
             foreach (Entity entity in list)
@@ -210,15 +223,17 @@ namespace AutoCadGcode
             {
                 PromptSelectionResult acSSPrompt = Global.doc.Editor.GetSelection();
                 list = ListFromSelecion(acSSPrompt);
+                if (list.Count == 0)
+                    return null;
             }
 
             return XDataManage.getXData(list);
         }
 
-        [CommandMethod("VALIDATEENTITYES")]
-        public static void ValidateEntityes()
+        [CommandMethod("VALIDATEENTITIES")]
+        public static void ValidateEntities()
         {
-            EntityesValidateEvent?.Invoke();
+            EntitiesValidateEvent?.Invoke();
         }
 
         [CommandMethod("BUILDGCODE")]
@@ -233,7 +248,7 @@ namespace AutoCadGcode
         {
             Global.editor.WriteMessage("HELLOW/n");
 
-            ValidateEntityes();
+            ValidateEntities();
             DocumentLoadedEvent?.Invoke();
         }
 
@@ -268,7 +283,7 @@ namespace AutoCadGcode
                 }
             }
             else
-                new System.Exception("There is problem in selection");
+                Global.editor.WriteMessage("There is problem in selection");
 
             return list;
         }

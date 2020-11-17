@@ -19,13 +19,13 @@ namespace AutoCadGcode
         public static event PropertiesChangeHandler PropertiesChangeEvent;
 
         private const string KEY = "GCODE";
-        public static List<UserEntity> setXData(List<UserEntity> uEntityes)
+        public static List<UserEntity> setXData(List<UserEntity> uEntities)
         {
             // Step through the objects in the set
-            foreach (UserEntity uEntity in uEntityes)
+            foreach (UserEntity uEntity in uEntities)
                 setXData(uEntity);
             
-            return uEntityes;
+            return uEntities;
         }
 
         public static UserEntity setXData(UserEntity uEntity)

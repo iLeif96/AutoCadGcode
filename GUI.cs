@@ -43,7 +43,7 @@ namespace AutoCadGcode
         private RibbonPanelSource rbNotPrintablePanelSource = new RibbonPanelSource();
         private RibbonPanel rbNotPrintablePanel = new RibbonPanel();
 
-        protected RibbonButton validateEntityesButton = new RibbonButton();
+        protected RibbonButton validateEntitiesButton = new RibbonButton();
         protected RibbonButton buildGcodeButton = new RibbonButton();
         private RibbonPanelSource rbValidatePanelSource = new RibbonPanelSource();
         private RibbonPanel rbValidatePanel = new RibbonPanel();
@@ -128,11 +128,11 @@ namespace AutoCadGcode
              * Validation and building
              */
 
-            validateEntityesButton.Id = "_validateEntityesButton";
-            validateEntityesButton.CommandHandler = new ValidateEntityesHandler();
-            validateEntityesButton.Size = RibbonItemSize.Standard;
-            validateEntityesButton.Text = "Валидация";
-            validateEntityesButton.ShowText = true;
+            validateEntitiesButton.Id = "_validateEntitiesButton";
+            validateEntitiesButton.CommandHandler = new ValidateEntitiesHandler();
+            validateEntitiesButton.Size = RibbonItemSize.Standard;
+            validateEntitiesButton.Text = "Валидация";
+            validateEntitiesButton.ShowText = true;
 
             buildGcodeButton.Id = "_buildGcodeButton";
             buildGcodeButton.CommandHandler = new buildGcodeHandler();
@@ -141,7 +141,7 @@ namespace AutoCadGcode
             buildGcodeButton.ShowText = true;
 
             rbValidatePanelSource.Title = "Валидация и запуск";
-            rbValidatePanelSource.Items.Add(validateEntityesButton);
+            rbValidatePanelSource.Items.Add(validateEntitiesButton);
             rbValidatePanelSource.Items.Add(new RibbonSeparator());
             rbValidatePanelSource.Items.Add(buildGcodeButton);
             rbValidatePanel.Source = rbValidatePanelSource;
@@ -162,7 +162,7 @@ namespace AutoCadGcode
         {
             Global.doc.ImpliedSelectionChanged += OnChangeSelectedObjectHandler;
             XDataManage.PropertiesChangeEvent += OnChangeParametersHandler;
-            Validation.ValidateEntityesEvent += ValidationChecking;
+            Validation.ValidateEntitiesEvent += ValidationChecking;
         }
 
         //Function for changing ribbon items attributes after incoming properties recived
@@ -210,7 +210,7 @@ namespace AutoCadGcode
             }
         }
         
-        //Handler for situation then entityes lost focus after changing parameter
+        //Handler for situation then entities lost focus after changing parameter
         private void OnChangeParametersHandler(UserEntity uEntity)
         {
             if (activeEntity == null) //Check for selected entity
@@ -305,7 +305,7 @@ namespace AutoCadGcode
         }
     }
 
-    public class ValidateEntityesHandler : System.Windows.Input.ICommand
+    public class ValidateEntitiesHandler : System.Windows.Input.ICommand
     {
 
         public event EventHandler CanExecuteChanged;
@@ -317,7 +317,7 @@ namespace AutoCadGcode
 
         public void Execute(object e)
         {
-            API.ValidateEntityes();
+            API.ValidateEntities();
         }
     }
 

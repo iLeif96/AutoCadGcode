@@ -10,7 +10,7 @@ namespace AutoCadGcode
     public class Validation
     {
         public delegate void ValidationChangedHandler(bool isValidatied);
-        public static event ValidationChangedHandler ValidateEntityesEvent;
+        public static event ValidationChangedHandler ValidateEntitiesEvent;
 
         private bool _isValidated = false;
         public bool isValidated
@@ -22,7 +22,7 @@ namespace AutoCadGcode
             set
             {
                 _isValidated = value;
-                ValidateEntityesEvent?.Invoke(value);
+                ValidateEntitiesEvent?.Invoke(value);
             }
         }
 
@@ -33,14 +33,22 @@ namespace AutoCadGcode
         {
             isValidated = false;
 
+            forPrint.Clear();
+            notForPrint.Clear();
+
             if (uEntitys == null || Global.uEntitys.Count == 0)
             {
-                throw new Exception("User Entityes collection is empty");
+                throw new Exception("User Entities collection is empty");
             }
 
             UserEntity firstEntity = null;
             UserEntity lastEntity = null;
 
+            int orderMax, orderMin, currOrder;
+            orderMax = orderMin = uEntitys[0].properties.Order;
+            currOrder = -1;
+
+            //Prevent validation iteration
             foreach (UserEntity uEntity in uEntitys)
             {
                 /**
@@ -59,10 +67,42 @@ namespace AutoCadGcode
                         throw new Exception("Last Line have to define only one time");
                     lastEntity = uEntity;
                 }
+
+                /**
+                 * Filling lists
+                 */
+                if (uEntity.properties.Printable == true)
+                {
+                    if (currOrder == uEntity.properties.Order)
+                        throw new Exception("The order of entities cannot have multiple equal values");
+
+                    currOrder = uEntity.properties.Order;
+                    orderMax = Math.Max(orderMax, currOrder);
+                    orderMin = Math.Min(orderMin, currOrder);
+                    forPrint.Add(uEntity);
+                }
+                else
+                    notForPrint.Add(uEntity);
             }
+
+            /**
+             * Checking values after prevent validation
+             */
+            if (forPrint.Count == 0)
+                throw new Exception("There are no printable entities");
+
+            if (orderMin == -1 || orderMax <= orderMin)
+                throw new Exception("Problem in entities ordering");
+
+            /**
+             * Sorting printable entities by order
+             */
+            forPrint = TreeNode.TreeFromList(forPrint).ToSortList();
 
             isValidated = true;
         }
 
     }
+
+    
 }
