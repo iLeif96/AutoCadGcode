@@ -11,26 +11,16 @@ namespace AutoCadGcode
 {
     public class Process
     {
-        public delegate void ValidationChangedHandler(bool isValidatied);
-        public static event ValidationChangedHandler ValidateEntityesEvent;
-        private bool _isValidated = false;
-        public bool isValidated
-        {
-            get
-            {
-                return _isValidated;
-            }
-            private set
-            {
-                _isValidated = value;
-                ValidateEntityesEvent?.Invoke(value);
-            }
-        }
+        public Validation validation;
         public Process()
         {
+            CreateObjects();
             CreateHandling();
         }
-
+        private void CreateObjects()
+        {
+            validation = new Validation();
+        }
         private void CreateHandling()
         {
             XDataManage.PropertiesChangeEvent += OnChangeProperties;
@@ -43,7 +33,7 @@ namespace AutoCadGcode
 
         public void OnDatabaseChanged(object sender, EventArgs e)
         {
-            isValidated = false;
+            validation.isValidated = false;
         }
 
         public void OnValidateEntityes()
@@ -52,47 +42,12 @@ namespace AutoCadGcode
             {
                 Global.uEntitys = new Dictionary<ObjectId, UserEntity>();
                 SetUserEntitys();
-                Validation();
+                validation.StartValidation(Global.uEntitys.Values.ToList<UserEntity>());
             }
             catch(Exception e)
             {
                 Global.editor.WriteMessage(e.ToString());
             }
-        }
-
-        private void Validation()
-        {
-            isValidated = false;
-
-            if (Global.uEntitys == null || Global.uEntitys.Count == 0) {
-                throw new Exception("User Entityes collection is empty");
-            }
-
-            UserEntity firstEntity = null;
-            UserEntity lastEntity = null;
-
-
-            foreach (UserEntity uEntity in Global.uEntitys.Values)
-            {
-                /**
-                 * Finding Firt and Last lines
-                 */
-                if (uEntity.properties.Last == true)
-                {
-                    if (firstEntity != null)
-                        throw new Exception("First Line have to define only one time");
-                    firstEntity = uEntity;
-                }
-
-                if (uEntity.properties.Last == true)
-                {
-                    if (lastEntity != null)
-                        throw new Exception("First Line have to define only one time");
-                    lastEntity = uEntity;
-                }
-            }
-
-            isValidated = true;
         }
 
         public static void OnChangeProperties(UserEntity uEntity)
