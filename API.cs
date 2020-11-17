@@ -18,6 +18,7 @@ namespace AutoCadGcode
         public delegate void OrderChangeHandler(UserEntity userEntity);
         public delegate void DocumentLoadedHandler(List<Entity> list = null);
         public delegate void EntityesValidateHandler();
+        public delegate void BuildGcodeHandler();
 
         public static event PumpingChangeHandler PumpingChangeEvent;
         public static event FirstChangeHandler FirstChangeEvent;
@@ -25,6 +26,7 @@ namespace AutoCadGcode
         public static event OrderChangeHandler OrderChangeEvent;
         public static event DocumentLoadedHandler DocumentLoadedEvent;
         public static event EntityesValidateHandler EntityesValidateEvent;
+        public static event BuildGcodeHandler BuildGcodeEvent;
 
 
 
@@ -218,6 +220,13 @@ namespace AutoCadGcode
         {
             EntityesValidateEvent?.Invoke();
         }
+
+        [CommandMethod("BUILDGCODE")]
+        public static void BuildGcode()
+        {
+            BuildGcodeEvent?.Invoke();
+        }
+        
 
 
         public void Initialize()

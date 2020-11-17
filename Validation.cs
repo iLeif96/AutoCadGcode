@@ -41,13 +41,12 @@ namespace AutoCadGcode
             UserEntity firstEntity = null;
             UserEntity lastEntity = null;
 
-
             foreach (UserEntity uEntity in uEntitys)
             {
                 /**
                  * Finding Firt and Last lines
                  */
-                if (uEntity.properties.Last == true)
+                if (uEntity.properties.First == true)
                 {
                     if (firstEntity != null)
                         throw new Exception("First Line have to define only one time");
@@ -57,7 +56,7 @@ namespace AutoCadGcode
                 if (uEntity.properties.Last == true)
                 {
                     if (lastEntity != null)
-                        throw new Exception("First Line have to define only one time");
+                        throw new Exception("Last Line have to define only one time");
                     lastEntity = uEntity;
                 }
             }

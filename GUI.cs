@@ -9,6 +9,7 @@ using System.Drawing;
 using System.Windows.Media.Imaging;
 using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.EditorInput;
+using System.Windows.Input;
 
 namespace AutoCadGcode
 {
@@ -43,6 +44,7 @@ namespace AutoCadGcode
         private RibbonPanel rbNotPrintablePanel = new RibbonPanel();
 
         protected RibbonButton validateEntityesButton = new RibbonButton();
+        protected RibbonButton buildGcodeButton = new RibbonButton();
         private RibbonPanelSource rbValidatePanelSource = new RibbonPanelSource();
         private RibbonPanel rbValidatePanel = new RibbonPanel();
 
@@ -132,8 +134,16 @@ namespace AutoCadGcode
             validateEntityesButton.Text = "Валидация";
             validateEntityesButton.ShowText = true;
 
+            buildGcodeButton.Id = "_buildGcodeButton";
+            buildGcodeButton.CommandHandler = new buildGcodeHandler();
+            buildGcodeButton.Size = RibbonItemSize.Standard;
+            buildGcodeButton.Text = "Построить Gcode";
+            buildGcodeButton.ShowText = true;
+
             rbValidatePanelSource.Title = "Валидация и запуск";
             rbValidatePanelSource.Items.Add(validateEntityesButton);
+            rbValidatePanelSource.Items.Add(new RibbonSeparator());
+            rbValidatePanelSource.Items.Add(buildGcodeButton);
             rbValidatePanel.Source = rbValidatePanelSource;
 
             rbTab.Title = "Trace Maker";
@@ -152,6 +162,7 @@ namespace AutoCadGcode
         {
             Global.doc.ImpliedSelectionChanged += OnChangeSelectedObjectHandler;
             XDataManage.PropertiesChangeEvent += OnChangeParametersHandler;
+            Validation.ValidateEntityesEvent += ValidationChecking;
         }
 
         //Function for changing ribbon items attributes after incoming properties recived
@@ -169,7 +180,16 @@ namespace AutoCadGcode
                 //TODO
             }
         }
+        
+        //Then validation changing we need to disable or enable the Build button
+        private void ValidationChecking(bool isValidated)
+        {
+            if (isValidated == true)
+                this.buildGcodeButton.IsEnabled = true;
 
+            this.buildGcodeButton.IsEnabled = false;
+
+        }
         //Handler for reciving information about selected entity
         private void OnChangeSelectedObjectHandler(object sender, EventArgs e)
         {
@@ -298,6 +318,21 @@ namespace AutoCadGcode
         public void Execute(object e)
         {
             API.ValidateEntityes();
+        }
+    }
+
+    internal class buildGcodeHandler : System.Windows.Input.ICommand
+    {
+        public event EventHandler CanExecuteChanged;
+
+        public bool CanExecute(object e)
+        {
+            return true;
+        }
+
+        public void Execute(object e)
+        {
+            API.BuildGcode();
         }
     }
 }
