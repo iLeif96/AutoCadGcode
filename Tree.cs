@@ -56,12 +56,11 @@ namespace AutoCadGcode
 
 		public static TreeNode TreeFromList(List<UserEntity> list)
 		{
-
 			if (list.Count > 0) { 
 				TreeNode tree = new TreeNode(list[0]);
 				for (int i = 1; i < list.Count; i++)
 					tree.Insert(list[i]);
-
+				
 				return tree;
 			}
 			return null;
