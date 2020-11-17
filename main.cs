@@ -14,8 +14,11 @@ using Autodesk.AutoCAD.DatabaseServices;
 
 namespace AutoCadGcode
 {
-    public class Global
+    public class Global : IExtensionApplication
     {
+        public delegate void DocumentLoadedHandler(List<Entity> list = null);
+        public static event DocumentLoadedHandler DocumentLoadedEvent;
+
         public static Editor editor = Application.DocumentManager.MdiActiveDocument.Editor;
 
         public static Database dB = Application.DocumentManager.MdiActiveDocument.Database;
@@ -24,11 +27,15 @@ namespace AutoCadGcode
 
         public static Document doc = Application.DocumentManager.MdiActiveDocument;
 
-        public static Dictionary<ObjectId, UserEntity> uEntitys = new Dictionary<ObjectId, UserEntity>();
+        public void Initialize()
+        {
+            Process.Start();
+            DocumentLoadedEvent?.Invoke();
+        }
 
-        public static Process process = new Process();
-
-        public static GUI gui = new GUI();
-
+        public void Terminate()
+        {
+            //
+        }
     }
 }

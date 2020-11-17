@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Autodesk.AutoCAD.DatabaseServices;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -36,13 +37,15 @@ namespace AutoCadGcode
             forPrint.Clear();
             notForPrint.Clear();
 
-            if (uEntitys == null || Global.uEntitys.Count == 0)
+            if (uEntitys == null || uEntitys.Count == 0)
             {
                 throw new Exception("User Entities collection is empty");
             }
 
             UserEntity firstEntity = null;
             UserEntity lastEntity = null;
+
+            Type type = null;
 
             int orderMax, orderMin, currOrder;
             orderMax = orderMin = uEntitys[0].properties.Order;
@@ -52,8 +55,14 @@ namespace AutoCadGcode
             foreach (UserEntity uEntity in uEntitys)
             {
                 /**
-                 * Finding Firt and Last lines
+                 * Checking available types for entities 
                  */
+                if (uEntity.CheckType() == false)
+                    throw new Exception("For generating Gcode must using only Line, Polyline and Arc entities");
+
+                /**
+                * Finding Firt and Last lines
+                */
                 if (uEntity.properties.First == true)
                 {
                     if (firstEntity != null)
@@ -99,10 +108,12 @@ namespace AutoCadGcode
              */
             forPrint = TreeNode.TreeFromList(forPrint).ToSortList();
 
+            foreach (UserEntity uEntity in forPrint)
+            {
+                Entity entity = uEntity.entity;
+            }
+
             isValidated = true;
         }
-
     }
-
-    
 }

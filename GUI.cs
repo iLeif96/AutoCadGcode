@@ -15,19 +15,22 @@ namespace AutoCadGcode
 {
     public class GUI
     {
+        public delegate void VirtaulParametersChangedHandler();
+        public static event VirtaulParametersChangedHandler VirtaulParametersChangedEvent;
+
         //Need to reciving information about selected object
-        public UserEntity activeEntity = null;
+        public static UserEntity ActiveEntity { get; set; } = null;
         //Store last selected object`s properties for display they.
         //Diiference with activeEntity is that after removing the selection
         //information is not lost here
-        private Properties _virtualProperies = new Properties();
-        public Properties virtualProperies
+        private static Properties _virtualProperies = new Properties();
+        public static Properties VirtualProperies
         {
             get { return _virtualProperies; }
             set
             {
                 _virtualProperies = value;
-                AttributesChanging();
+                GUI.VirtaulParametersChangedEvent?.Invoke();
             }
         }
         
@@ -163,15 +166,16 @@ namespace AutoCadGcode
             Global.doc.ImpliedSelectionChanged += OnChangeSelectedObjectHandler;
             XDataManage.PropertiesChangeEvent += OnChangeParametersHandler;
             Validation.ValidateEntitiesEvent += ValidationChecking;
+            GUI.VirtaulParametersChangedEvent += OnVirtualParametersChangedHandler;
         }
 
         //Function for changing ribbon items attributes after incoming properties recived
         private void AttributesChanging()
         {
             //Set attributes that are not affected by deselecting
-            this.setOrderSpinner.Value = virtualProperies.Order;
+            this.setOrderSpinner.Value = VirtualProperies.Order;
 
-            if (activeEntity != null) //if we have selected entity then set some attributes
+            if (ActiveEntity != null) //if we have selected entity then set some attributes
             {
                 //TODO
             }
@@ -199,28 +203,33 @@ namespace AutoCadGcode
             {
                 var list = API.ListFromSelecion(res);
                 if (list != null && list.Count > 0)
-                    activeEntity = API.GetXData(list).Last<UserEntity>();
+                    ActiveEntity = API.GetXData(list).Last<UserEntity>();
             }
             else
-                activeEntity = null;
+                ActiveEntity = null;
 
-            if (activeEntity != null)
+            if (ActiveEntity != null)
             {
-                virtualProperies = activeEntity.properties;
+                VirtualProperies = ActiveEntity.properties;
             }
         }
         
         //Handler for situation then entities lost focus after changing parameter
         private void OnChangeParametersHandler(UserEntity uEntity)
         {
-            if (activeEntity == null) //Check for selected entity
-                virtualProperies = uEntity.properties;
+            if (ActiveEntity == null) //Check for selected entity
+                VirtualProperies = uEntity.properties;
+        }
+        //Handler for 
+        private void OnVirtualParametersChangedHandler()
+        {
+            AttributesChanging();
         }
 
         //Handler for transfer value from orderSpinner to virtualProperies
         private void SetOrderHandler(object sender, System.ComponentModel.PropertyChangedEventArgs e)
         {
-            virtualProperies.Order = Convert.ToInt32((sender as RibbonSpinner).TextValue);
+            VirtualProperies.Order = Convert.ToInt32((sender as RibbonSpinner).TextValue);
         }
     }
 
@@ -269,7 +278,7 @@ namespace AutoCadGcode
         public void Execute(object e)
         {
             //TODO: need think about avoid using Global field
-            API.SetOrder(Global.gui.virtualProperies);
+            API.SetOrder(GUI.VirtualProperies);
         }
     }
 

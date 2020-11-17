@@ -10,13 +10,12 @@ using System.Threading.Tasks;
 
 namespace AutoCadGcode
 {
-    public class API : IExtensionApplication
+    public class API
     {
         public delegate void PumpingChangeHandler(UserEntity userEntity);
         public delegate void FirstChangeHandler(UserEntity userEntity);
         public delegate void LastChangeHandler(UserEntity userEntity);
         public delegate void OrderChangeHandler(UserEntity userEntity);
-        public delegate void DocumentLoadedHandler(List<Entity> list = null);
         public delegate void EntitiesValidateHandler();
         public delegate void BuildGcodeHandler();
 
@@ -24,7 +23,6 @@ namespace AutoCadGcode
         public static event FirstChangeHandler FirstChangeEvent;
         public static event LastChangeHandler LastChangeEvent;
         public static event OrderChangeHandler OrderChangeEvent;
-        public static event DocumentLoadedHandler DocumentLoadedEvent;
         public static event EntitiesValidateHandler EntitiesValidateEvent;
         public static event BuildGcodeHandler BuildGcodeEvent;
 
@@ -242,21 +240,6 @@ namespace AutoCadGcode
             BuildGcodeEvent?.Invoke();
         }
         
-
-
-        public void Initialize()
-        {
-            Global.editor.WriteMessage("HELLOW/n");
-
-            ValidateEntities();
-            DocumentLoadedEvent?.Invoke();
-        }
-
-        public void Terminate()
-        {
-
-        }
-
         /**
          * Addition functions
          */

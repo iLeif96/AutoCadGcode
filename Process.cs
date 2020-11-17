@@ -9,52 +9,58 @@ using Autodesk.AutoCAD.ApplicationServices;
 
 namespace AutoCadGcode
 {
-    public class Process
+    public static class Process
     {
-        public Validation validation;
-        public Process()
+        public static GUI Gui { get; set; }
+
+        public static Validation Validation { get; set; }
+
+        public static Dictionary<ObjectId, UserEntity> UEntitys { get; set; }
+
+        public static void Start()
         {
             CreateObjects();
             CreateHandling();
+            API.ValidateEntities();
+
+            Global.editor.WriteMessage("AutoCadGcode by Svetoslav Elkin now is ready to work/n");
         }
-        private void CreateObjects()
+        private static void CreateObjects()
         {
-            validation = new Validation();
+            UEntitys = new Dictionary<ObjectId, UserEntity>();
+            Gui = new GUI();
+            Validation = new Validation();
         }
-        private void CreateHandling()
+        private static void CreateHandling()
         {
             XDataManage.PropertiesChangeEvent += OnChangeProperties;
             API.EntitiesValidateEvent += OnValidateEntities;
             Global.dB.ObjectAppended += OnDatabaseChanged;
-
             //API.DocumentLoadedEvent += SetUserEntitys;
             //TODO
         }
-
-        public void OnDatabaseChanged(object sender, EventArgs e)
+        private static void OnDatabaseChanged(object sender, EventArgs e)
         {
-            validation.isValidated = false;
+            Validation.isValidated = false;
         }
-
-        public void OnValidateEntities()
+        private static void OnValidateEntities()
         {
             try
             {
-                Global.uEntitys = new Dictionary<ObjectId, UserEntity>();
+                UEntitys = new Dictionary<ObjectId, UserEntity>();
                 SetUserEntitys();
-                validation.StartValidation(Global.uEntitys.Values.ToList<UserEntity>());
+                Validation.StartValidation(UEntitys.Values.ToList<UserEntity>());
             }
             catch(Exception e)
             {
                 Global.editor.WriteMessage(e.ToString());
             }
         }
-
-        public static void OnChangeProperties(UserEntity uEntity)
+        private static void OnChangeProperties(UserEntity uEntity)
         {
             OnChangeColor(uEntity);
         }
-        public static void OnChangeColor(UserEntity uEntity)
+        private static void OnChangeColor(UserEntity uEntity)
         {
             if (uEntity != null)
             {
@@ -76,7 +82,7 @@ namespace AutoCadGcode
                 }
             }
         }
-        public static void SetUserEntitys(List<Entity> list = null)
+        private static void SetUserEntitys(List<Entity> list = null)
         {
             if (list != null)
                 foreach (Entity entity in list)
@@ -84,26 +90,27 @@ namespace AutoCadGcode
             else
                 SetUserEntitys(SelectAllObjectsFromAc()); 
         }
-        public static void SetUserEntitys(Entity entity)
+        private static void SetUserEntitys(Entity entity)
         {
             if (entity == null)
                 return;
 
             UserEntity uEntity = XDataManage.getXData(entity);
 
-            if (uEntity == null)
-                uEntity = XDataManage.setXData(new UserEntity(entity, new Properties()));
-
-            if (!Global.uEntitys.ContainsKey(entity.ObjectId))
-                Global.uEntitys.Add(uEntity.ObjectId, uEntity);
-            else
+            if (uEntity != null)
             {
-                Global.uEntitys[uEntity.ObjectId] = uEntity;
-                Global.editor.WriteMessage("Warrning. Object already stored");
+                if (!UEntitys.ContainsKey(entity.ObjectId))
+                    UEntitys.Add(uEntity.ObjectId, uEntity);
+                else
+                {
+                    UEntitys[uEntity.ObjectId] = uEntity;
+                    Global.editor.WriteMessage("Warrning. Object already stored");
+                }
             }
+            else
+                Global.editor.WriteMessage("Not all entites in document have available properties");
         }
-
-        public static List<Entity> SelectAllObjectsFromAc()
+        private static List<Entity> SelectAllObjectsFromAc()
         {
             List<Entity> list = new List<Entity>();
             try

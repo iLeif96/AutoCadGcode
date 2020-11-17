@@ -19,7 +19,31 @@ namespace AutoCadGcode
             this.properties = properties;
             this.ObjectId = entity.ObjectId;
         }
+        public bool CheckType(Entity entity = null)
+        {
+            bool result = false;
+            if (entity == null)
+                entity = this.entity;
+
+            Type type = entity.GetType();
+
+            if (type.Name != "Line" && type.Name != "Polyline" && type.Name != "Arc")
+                result = true;
+
+            if (type.Name == "Polyline")
+            {
+                try
+                {
+                    Polyline polyline = entity as Polyline;
+                    //foreach (Entity entity in polyline.)
+                }
+                catch (Exception e)
+                {
+                    return result = false;
+                }
+            }
+
+            return result;
+        }
     }
-
-
 }
