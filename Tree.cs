@@ -50,7 +50,6 @@ namespace AutoCadGcode
 			if (Right != null)
 				Right.ToSortList(list);
 
-
 			return list;
 		}
 
