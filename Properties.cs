@@ -36,7 +36,6 @@ namespace AutoCadGcode
                 PropertiesList[(int)Fields.Pumping] = value;
             }
         }
-
         public bool Printable
         {
             get
@@ -58,7 +57,6 @@ namespace AutoCadGcode
                     PropertiesList[(int)Fields.Printable] = value;
             }
         }
-
         public int Order
         {
             get
@@ -67,6 +65,8 @@ namespace AutoCadGcode
             }
             set
             {
+                if (value > 0 && Printable == false)
+                    return;
                 PropertiesList[(int)Fields.Order] = value;
             }
         }
@@ -78,6 +78,8 @@ namespace AutoCadGcode
             }
             set
             {
+                if (Printable == true)
+                    return;
                 if (value == true)
                     Last = false;
                 PropertiesList[(int)Fields.First] = value;
@@ -91,6 +93,8 @@ namespace AutoCadGcode
             }
             set
             {
+                if (Printable == true)
+                    return;
                 if (value == true)
                     First = false;
                 PropertiesList[(int)Fields.Last] = value;
@@ -144,6 +148,13 @@ namespace AutoCadGcode
             return props;
         }
 
+        public Properties Clone()
+        {
+            Properties props = new Properties();
+            props.PropertiesList = this.PropertiesList.Clone() as object[];
+            return props;
+        }
+
         public override string ToString()
         {
             string str = "Properties: \n";
@@ -153,5 +164,7 @@ namespace AutoCadGcode
             
             return str;
         }
+
+        
     }
 }

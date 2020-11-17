@@ -11,26 +11,88 @@ namespace AutoCadGcode
 {
     public class Process
     {
-
+        public delegate void ValidationChangedHandler(bool isValidatied);
+        public static event ValidationChangedHandler ValidateEntityesEvent;
+        private bool _isValidated = false;
+        public bool isValidated
+        {
+            get
+            {
+                return _isValidated;
+            }
+            private set
+            {
+                _isValidated = value;
+                ValidateEntityesEvent?.Invoke(value);
+            }
+        }
         public Process()
+        {
+            CreateHandling();
+        }
+
+        private void CreateHandling()
         {
             XDataManage.PropertiesChangeEvent += OnChangeProperties;
             API.EntityesValidateEvent += OnValidateEntityes;
+            Global.dB.ObjectAppended += OnDatabaseChanged;
+
             //API.DocumentLoadedEvent += SetUserEntitys;
             //TODO
-            //Global.dB.ObjectAppended += OnDatabaseChanged;
-            
         }
 
         public void OnDatabaseChanged(object sender, EventArgs e)
         {
-            SetUserEntitys();
+            isValidated = false;
         }
 
-        public static void OnValidateEntityes()
+        public void OnValidateEntityes()
         {
-            Global.uEntitys = new Dictionary<ObjectId, UserEntity>();
-            SetUserEntitys();
+            try
+            {
+                Global.uEntitys = new Dictionary<ObjectId, UserEntity>();
+                SetUserEntitys();
+                Validation();
+            }
+            catch(Exception e)
+            {
+                Global.editor.WriteMessage(e.ToString());
+            }
+        }
+
+        private void Validation()
+        {
+            isValidated = false;
+
+            if (Global.uEntitys == null || Global.uEntitys.Count == 0) {
+                throw new Exception("User Entityes collection is empty");
+            }
+
+            UserEntity firstEntity = null;
+            UserEntity lastEntity = null;
+
+
+            foreach (UserEntity uEntity in Global.uEntitys.Values)
+            {
+                /**
+                 * Finding Firt and Last lines
+                 */
+                if (uEntity.properties.Last == true)
+                {
+                    if (firstEntity != null)
+                        throw new Exception("First Line have to define only one time");
+                    firstEntity = uEntity;
+                }
+
+                if (uEntity.properties.Last == true)
+                {
+                    if (lastEntity != null)
+                        throw new Exception("First Line have to define only one time");
+                    lastEntity = uEntity;
+                }
+            }
+
+            isValidated = true;
         }
 
         public static void OnChangeProperties(UserEntity uEntity)
@@ -65,7 +127,7 @@ namespace AutoCadGcode
                 foreach (Entity entity in list)
                     SetUserEntitys(entity);
             else
-                SetUserEntitys(SelectAllObjectsFromAc());
+                SetUserEntitys(SelectAllObjectsFromAc()); 
         }
         public static void SetUserEntitys(Entity entity)
         {
@@ -85,8 +147,6 @@ namespace AutoCadGcode
                 Global.editor.WriteMessage("Warrning. Object already stored");
             }
         }
-
-
 
         public static List<Entity> SelectAllObjectsFromAc()
         {

@@ -90,24 +90,23 @@ namespace AutoCadGcode
             LastChangeEvent?.Invoke(uEntity);
         }
 
+        public static int prevOrder = -1;
         [CommandMethod("SETORDER", CommandFlags.UsePickSet)]
-        public static void SetOrder(Properties propertiesOrder, Entity entity = null)
+        public static void SetOrder(Properties propertiesOrder = null)
         {
-            int order = propertiesOrder.Order;
-            List<Entity> list = null;
-            
-            if (entity == null)
-            {
-                PromptSelectionResult acSSPrompt = Global.doc.Editor.GetSelection();
-                list = ListFromSelecion(acSSPrompt);
-                entity = list.Last<Entity>();
-            }
+            int order = -1;
+            if (propertiesOrder != null)
+                order = propertiesOrder.Order;
 
+            PromptSelectionResult acSSPrompt = Global.doc.Editor.GetSelection();
+            List<Entity> list = ListFromSelecion(acSSPrompt);
             if (order < 0)
             {
-                PromptIntegerResult promptInteger =
-                    Global.doc.Editor.GetInteger(new PromptIntegerOptions(
-                        "Пожалуйста, введите порядковый номер линии в чертеже: "));
+                PromptIntegerOptions pOpts = new PromptIntegerOptions(
+                        "Пожалуйста, введите порядковый номер линии в чертеже: ");
+                pOpts.LowerLimit = -1;
+                pOpts.DefaultValue = API.prevOrder + 1;
+                PromptIntegerResult promptInteger = Global.doc.Editor.GetInteger(pOpts);
                 order = promptInteger.Value;
                 if (order < 0)
                 {
@@ -115,18 +114,20 @@ namespace AutoCadGcode
                     return;
                 }
             }
+            API.prevOrder = order;
+            foreach (Entity entity in list)
+            {
+                UserEntity userEntity = XDataManage.getXData(entity);
 
-            UserEntity userEntity = XDataManage.getXData(entity);
+                if (userEntity == null)
+                    userEntity = new UserEntity(entity, new Properties());
 
-            if (userEntity == null)
-                userEntity = new UserEntity(entity, new Properties());
+                userEntity.properties.Printable = true;
+                userEntity.properties.Order = order;
 
-            userEntity.properties.Printable = true;
-            userEntity.properties.Order = order;
-
-            userEntity = XDataManage.setXData(userEntity);
-
-            OrderChangeEvent?.Invoke(userEntity);
+                userEntity = XDataManage.setXData(userEntity);
+                OrderChangeEvent?.Invoke(userEntity);
+            }
         }
 
         [CommandMethod("SETPUMPINGTRUE", CommandFlags.UsePickSet)]

@@ -14,8 +14,21 @@ namespace AutoCadGcode
 {
     public class GUI
     {
+        //Need to reciving information about selected object
         public UserEntity activeEntity = null;
-        public int order = -1;
+        //Store last selected object`s properties for display they.
+        //Diiference with activeEntity is that after removing the selection
+        //information is not lost here
+        private Properties _virtualProperies = new Properties();
+        public Properties virtualProperies
+        {
+            get { return _virtualProperies; }
+            set
+            {
+                _virtualProperies = value;
+                AttributesChanging();
+            }
+        }
         
         protected RibbonButton setPumpingTrueButton = new RibbonButton();
         protected RibbonButton setPumpingFalseButton = new RibbonButton();
@@ -39,38 +52,8 @@ namespace AutoCadGcode
         public GUI()
         {
             CreateGUI();
-            Global.doc.ImpliedSelectionChanged += OnChangeSelectedObject;
-        }
-
-        private void OnChangeSelectedObject(object sender, EventArgs e)
-        {
-            
-            PromptSelectionResult res = Global.editor.SelectImplied();
-            if (res.Value != null)
-            { 
-                var list = API.ListFromSelecion(res);
-                if (list != null && list.Count > 0)
-                    activeEntity = API.GetXData(list).Last<UserEntity>();
-            }
-            else
-                activeEntity = null;
-
-            //if (e.Selection.Count > 0)
-            //    this.activeEntity = API.FindUserEntityByObjectId(e.Selection[e.Selection.Count - 1].ObjectId);
-            //else
-            //    this.activeEntity = null;
-
-            if (activeEntity != null)
-            {
-                this.setOrderSpinner.Value = activeEntity.properties.Order;
-            }
-            else
-            {
-                this.setOrderSpinner.Value = 0;
-            }
-
-        }
-        
+            CreateHandling();
+        }        
 
         private void CreateGUI()
         {
@@ -82,7 +65,6 @@ namespace AutoCadGcode
             setPumpingTrueButton.Size = RibbonItemSize.Standard;
             setPumpingTrueButton.Text = "С бетоном";
             setPumpingTrueButton.ShowText = true;
-
 
             setPumpingFalseButton.Id = "_setPumpingFalseButton";
             setPumpingFalseButton.CommandHandler = new SetPumpingFalseHandler();
@@ -166,18 +148,53 @@ namespace AutoCadGcode
 
             rbTab.IsActive = true;
         }
+        private void CreateHandling()
+        {
+            Global.doc.ImpliedSelectionChanged += OnChangeSelectedObjectHandler;
+        }
 
+        //Function for changing ribbon items attributes after incoming properties recived
+        private void AttributesChanging()
+        {
+            //Set attributes that are not affected by deselecting
+            this.setOrderSpinner.Value = virtualProperies.Order;
+
+            if (activeEntity != null) //if we have selected entity then set some attributes
+            {
+                //TODO
+            }
+            else //If we have not selected entity then clear some attributes
+            {
+                //TODO
+            }
+        }
+
+        //Handler for reciving information about selected entity
+        private void OnChangeSelectedObjectHandler(object sender, EventArgs e)
+        {
+
+            PromptSelectionResult res = Global.editor.SelectImplied();
+            if (res.Value != null)
+            {
+                var list = API.ListFromSelecion(res);
+                if (list != null && list.Count > 0)
+                    activeEntity = API.GetXData(list).Last<UserEntity>();
+            }
+            else
+                activeEntity = null;
+
+            if (activeEntity != null)
+            {
+                virtualProperies = activeEntity.properties;
+            }
+        }
+        
+        //Handler for transfer value from orderSpinner to virtualProperies
         private void SetOrderHandler(object sender, System.ComponentModel.PropertyChangedEventArgs e)
         {
-            order = Convert.ToInt32((sender as RibbonSpinner).TextValue);
+            virtualProperies.Order = Convert.ToInt32((sender as RibbonSpinner).TextValue);
         }
     }
-
-    //System.Windows.Media.Imaging.BitmapImage LoadImage(string ImageName)
-    //{
-    //    return new System.Windows.Media.Imaging.BitmapImage(
-    //        new Uri("pack://application:,,,/ACadRibbon;component/" + ImageName + ".png"));
-    //}
 
     public class SetPumpingTrueHandler : System.Windows.Input.ICommand
     {
@@ -211,22 +228,6 @@ namespace AutoCadGcode
         }
     }
 
-    public class SetOrder : System.Windows.Input.ICommand
-    {
-
-        public event EventHandler CanExecuteChanged;
-
-        public bool CanExecute(object e)
-        {
-            return true;
-        }
-
-        public void Execute(object e)
-        {
-            API.SetFirst();
-        }
-    }
-
     public class SetOrderHandler : System.Windows.Input.ICommand
     {
 
@@ -239,9 +240,8 @@ namespace AutoCadGcode
 
         public void Execute(object e)
         {
-            var prop = new Properties();
-            prop.Order = Global.gui.order;
-            API.SetOrder(prop);
+            //TODO: need think about avoid using Global field
+            API.SetOrder(Global.gui.virtualProperies);
         }
     }
 

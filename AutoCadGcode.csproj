@@ -85,6 +85,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="API.cs" />
+    <Compile Include="GcodeGenerator.cs" />
     <Compile Include="GUI.cs" />
     <Compile Include="main.cs" />
     <Compile Include="Process.cs" />
