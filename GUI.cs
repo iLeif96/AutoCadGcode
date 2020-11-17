@@ -186,8 +186,8 @@ namespace AutoCadGcode
         {
             if (isValidated == true)
                 this.buildGcodeButton.IsEnabled = true;
-
-            this.buildGcodeButton.IsEnabled = false;
+            else
+                this.buildGcodeButton.IsEnabled = false;
 
         }
         //Handler for reciving information about selected entity
