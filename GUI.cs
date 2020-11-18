@@ -164,6 +164,9 @@ namespace AutoCadGcode
         private void CreateHandling()
         {
             Global.doc.ImpliedSelectionChanged += OnChangeSelectedObjectHandler;
+            //Global.editor.SelectionAdded += OnChangeSelectedObjectHandler;
+            //Global.editor.SelectionRemoved += OnChangeSelectedObjectHandler;
+
             XDataManage.PropertiesChangeEvent += OnChangeParametersHandler;
             Validation.ValidateEntitiesEvent += ValidationChecking;
             GUI.VirtaulParametersChangedEvent += OnVirtualParametersChangedHandler;
@@ -192,7 +195,6 @@ namespace AutoCadGcode
                 this.buildGcodeButton.IsEnabled = true;
             else
                 this.buildGcodeButton.IsEnabled = false;
-
         }
         //Handler for reciving information about selected entity
         private void OnChangeSelectedObjectHandler(object sender, EventArgs e)
