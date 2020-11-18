@@ -14,6 +14,13 @@ using Autodesk.AutoCAD.DatabaseServices;
 
 namespace AutoCadGcode
 {
+    public struct AvailableTypes
+    {
+        public Type LINE { get { return typeof(Line); } }
+        public Type ARC { get { return typeof(Arc); } }
+        public Type POLYLINE { get { return typeof(Polyline); } }
+    }
+
     public class Global : IExtensionApplication
     {
         public delegate void DocumentLoadedHandler(List<Entity> list = null);
