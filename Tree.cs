@@ -18,7 +18,7 @@ namespace AutoCadGcode
 
 		public UserEntity Insert(UserEntity data)
 		{
-			if (data.properties.Order < Data.properties.Order)
+			if (data.Properties.Order < Data.Properties.Order)
 			{
 				if (Left == null)
 					Left = new TreeNode(data);
@@ -26,7 +26,7 @@ namespace AutoCadGcode
 					Left.Insert(data);
 			}
 
-			if (data.properties.Order > Data.properties.Order)
+			if (data.Properties.Order > Data.Properties.Order)
 			{
 				if (Right == null)
 					Right = new TreeNode(data);

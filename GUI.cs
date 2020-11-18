@@ -41,6 +41,8 @@ namespace AutoCadGcode
         protected RibbonPanelSource rbPrintablePanelSource = new RibbonPanelSource();
         protected RibbonPanel rbPrintablePanel = new RibbonPanel();
 
+        protected RibbonSpinner stopAndPumpSpinner = new RibbonSpinner();
+        protected RibbonButton stopAndPumpButton = new RibbonButton();
         protected RibbonButton setFirstButton = new RibbonButton();
         protected RibbonButton setLastButton = new RibbonButton();
         private RibbonPanelSource rbNotPrintablePanelSource = new RibbonPanelSource();
@@ -66,13 +68,11 @@ namespace AutoCadGcode
              * Properties
              */
             setPumpingTrueButton.Id = "_setPumpingTrueButton";
-            setPumpingTrueButton.CommandHandler = new SetPumpingTrueHandler();
             setPumpingTrueButton.Size = RibbonItemSize.Standard;
             setPumpingTrueButton.Text = "С бетоном";
             setPumpingTrueButton.ShowText = true;
 
             setPumpingFalseButton.Id = "_setPumpingFalseButton";
-            setPumpingFalseButton.CommandHandler = new SetPumpingFalseHandler();
             setPumpingFalseButton.Size = RibbonItemSize.Standard;
             setPumpingFalseButton.Text = "Без бетона";
             setPumpingFalseButton.ShowText = true;
@@ -81,7 +81,6 @@ namespace AutoCadGcode
             setOrderSpinner.Size = RibbonItemSize.Standard;
             setOrderSpinner.Text = "Порядок печати";
             setOrderSpinner.ShowText = true;
-            setOrderSpinner.ValueChanged += SetOrderHandler;
             setOrderSpinner.Value = 0;
             setOrderSpinner.Minimum = -1;
             setOrderSpinner.Maximum = int.MaxValue;
@@ -90,7 +89,6 @@ namespace AutoCadGcode
             setOrderSpinner.IsEnabled = true;
 
             setOrderButton.Id = "_setOrderButton";
-            setOrderButton.CommandHandler = new SetOrderHandler();
             setOrderButton.Size = RibbonItemSize.Standard;
             setOrderButton.Text = "Применить";
             setOrderButton.ShowText = true;
@@ -109,14 +107,28 @@ namespace AutoCadGcode
              * Not printable parameters
              */
 
+            stopAndPumpSpinner.Id = "_setOrder";
+            stopAndPumpSpinner.Size = RibbonItemSize.Standard;
+            stopAndPumpSpinner.Text = "Прокачка (мс)";
+            stopAndPumpSpinner.ShowText = true;
+            stopAndPumpSpinner.Value = 0;
+            stopAndPumpSpinner.Minimum = 0;
+            stopAndPumpSpinner.Maximum = int.MaxValue;
+            stopAndPumpSpinner.Width = 150;
+            stopAndPumpSpinner.IsEditable = true;
+            stopAndPumpSpinner.IsEnabled = true;
+
+            stopAndPumpButton.Id = "_stopAndPump";
+            stopAndPumpButton.Size = RibbonItemSize.Standard;
+            stopAndPumpButton.Text = "Применить";
+            stopAndPumpButton.ShowText = true;
+
             setFirstButton.Id = "_setFirst";
-            setFirstButton.CommandHandler = new SetFirstHandler();
             setFirstButton.Size = RibbonItemSize.Standard;
             setFirstButton.Text = "Первая";
             setFirstButton.ShowText = true;
 
             setLastButton.Id = "_setLast";
-            setLastButton.CommandHandler = new SetLastHandler();
             setLastButton.Size = RibbonItemSize.Standard;
             setLastButton.Text = "Последняя";
             setLastButton.ShowText = true;
@@ -125,6 +137,9 @@ namespace AutoCadGcode
             rbNotPrintablePanelSource.Items.Add(setFirstButton);
             rbNotPrintablePanelSource.Items.Add(new RibbonSeparator());
             rbNotPrintablePanelSource.Items.Add(setLastButton);
+            rbNotPrintablePanelSource.Items.Add(new RibbonRowBreak());
+            rbNotPrintablePanelSource.Items.Add(stopAndPumpSpinner);
+            rbNotPrintablePanelSource.Items.Add(stopAndPumpButton);
             rbNotPrintablePanel.Source = rbNotPrintablePanelSource;
 
             /**
@@ -166,17 +181,28 @@ namespace AutoCadGcode
             Global.doc.ImpliedSelectionChanged += OnChangeSelectedObjectHandler;
             //Global.editor.SelectionAdded += OnChangeSelectedObjectHandler;
             //Global.editor.SelectionRemoved += OnChangeSelectedObjectHandler;
-
             XDataManage.PropertiesChangeEvent += OnChangeParametersHandler;
             Validation.ValidateEntitiesEvent += ValidationChecking;
             GUI.VirtaulParametersChangedEvent += OnVirtualParametersChangedHandler;
+
+            setPumpingTrueButton.CommandHandler = new SetPumpingTrueHandler();
+            setPumpingFalseButton.CommandHandler = new SetPumpingFalseHandler();
+            setOrderButton.CommandHandler = new SetOrderHandler();
+            stopAndPumpButton.CommandHandler = new StopAndPumpHandler();
+            setFirstButton.CommandHandler = new SetFirstHandler();
+            setLastButton.CommandHandler = new SetLastHandler();
+
+            setOrderSpinner.ValueChanged += SetOrderSpinHandler;
+            stopAndPumpSpinner.ValueChanged += StopAndPumpSpinHandler;
         }
 
         //Function for changing ribbon items attributes after incoming properties recived
         private void AttributesChanging()
         {
             //Set attributes that are not affected by deselecting
-            this.setOrderSpinner.Value = VirtualProperies.Order;
+            setOrderSpinner.Value = VirtualProperies.Order;
+            stopAndPumpSpinner.Value = VirtualProperies.StopAndPump;
+
 
             if (ActiveEntity != null) //if we have selected entity then set some attributes
             {
@@ -212,7 +238,7 @@ namespace AutoCadGcode
 
             if (ActiveEntity != null)
             {
-                VirtualProperies = ActiveEntity.properties;
+                VirtualProperies = ActiveEntity.Properties;
             }
         }
         
@@ -220,7 +246,7 @@ namespace AutoCadGcode
         private void OnChangeParametersHandler(UserEntity uEntity)
         {
             if (ActiveEntity == null) //Check for selected entity
-                VirtualProperies = uEntity.properties;
+                VirtualProperies = uEntity.Properties;
         }
         //Handler for 
         private void OnVirtualParametersChangedHandler()
@@ -229,9 +255,15 @@ namespace AutoCadGcode
         }
 
         //Handler for transfer value from orderSpinner to virtualProperies
-        private void SetOrderHandler(object sender, System.ComponentModel.PropertyChangedEventArgs e)
+        private void SetOrderSpinHandler(object sender, System.ComponentModel.PropertyChangedEventArgs e)
         {
             VirtualProperies.Order = Convert.ToInt32((sender as RibbonSpinner).TextValue);
+        }
+        //Handler for transfer value from stopAndPumpSpinner to virtualProperies
+
+        private void StopAndPumpSpinHandler(object sender, System.ComponentModel.PropertyChangedEventArgs e)
+        {
+            VirtualProperies.StopAndPump = Convert.ToInt32((sender as RibbonSpinner).TextValue);
         }
     }
 
@@ -279,8 +311,22 @@ namespace AutoCadGcode
 
         public void Execute(object e)
         {
-            //TODO: need think about avoid using Global field
             API.SetOrder(GUI.VirtualProperies);
+        }
+    }
+
+    public class StopAndPumpHandler : System.Windows.Input.ICommand
+    {
+        public event EventHandler CanExecuteChanged;
+
+        public bool CanExecute(object e)
+        {
+            return true;
+        }
+
+        public void Execute(object e)
+        {
+            API.SetStopAndPump(GUI.VirtualProperies);
         }
     }
 

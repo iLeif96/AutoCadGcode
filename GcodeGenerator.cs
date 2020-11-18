@@ -6,8 +6,11 @@ using System.Threading.Tasks;
 
 namespace AutoCadGcode
 {
-    class GcodeGenerator
+    public class GcodeGenerator
     {
+        public GcodeGenerator()
+        {
 
+        }
     }
 }

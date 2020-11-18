@@ -39,11 +39,11 @@ namespace AutoCadGcode
                     acRegAppTbl = acTrans.GetObject(Global.dB.RegAppTableId, OpenMode.ForRead) as RegAppTable;
 
                     // Check to see if the Registered Applications table record for the custom app exists
-                    if (acRegAppTbl.Has(uEntity.properties.KEY) == false)
+                    if (acRegAppTbl.Has(uEntity.Properties.KEY) == false)
                     {
                         using (RegAppTableRecord acRegAppTblRec = new RegAppTableRecord())
                         {
-                            acRegAppTblRec.Name = uEntity.properties.KEY;
+                            acRegAppTblRec.Name = uEntity.Properties.KEY;
                             acTrans.GetObject(Global.dB.RegAppTableId, OpenMode.ForWrite);
                             acRegAppTbl.Add(acRegAppTblRec);
                             acTrans.AddNewlyCreatedDBObject(acRegAppTblRec, true);
@@ -52,14 +52,14 @@ namespace AutoCadGcode
 
                     // Append the extended data to each object
                     Entity entity = acTrans.GetObject(uEntity.ObjectId, OpenMode.ForWrite) as Entity;
-                    using (ResultBuffer buffer = uEntity.properties.ToBuffer())
+                    using (ResultBuffer buffer = uEntity.Properties.ToBuffer())
                     {
                         entity.XData = buffer;
                         PropertiesChangeEvent?.Invoke(uEntity);
                     }
                     // Save the new object to the database
                     acTrans.Commit();
-                    Global.editor.WriteMessage(uEntity.properties.ToString());
+                    Global.editor.WriteMessage(uEntity.Properties.ToString());
                     return uEntity;
                 }
             }

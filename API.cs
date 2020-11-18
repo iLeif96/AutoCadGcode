@@ -16,6 +16,7 @@ namespace AutoCadGcode
         public delegate void FirstChangeHandler(UserEntity userEntity);
         public delegate void LastChangeHandler(UserEntity userEntity);
         public delegate void OrderChangeHandler(UserEntity userEntity);
+        public delegate void StopAndPumpHandler(UserEntity userEntity);
         public delegate void EntitiesValidateHandler();
         public delegate void BuildGcodeHandler();
 
@@ -23,6 +24,7 @@ namespace AutoCadGcode
         public static event FirstChangeHandler FirstChangeEvent;
         public static event LastChangeHandler LastChangeEvent;
         public static event OrderChangeHandler OrderChangeEvent;
+        public static event StopAndPumpHandler StopAndPumpEvent;
         public static event EntitiesValidateHandler EntitiesValidateEvent;
         public static event BuildGcodeHandler BuildGcodeEvent;
 
@@ -60,12 +62,12 @@ namespace AutoCadGcode
             if (uEntity == null)
                 uEntity = new UserEntity(entity, new Properties());
 
-            uEntity.properties.Printable = false;
-            uEntity.properties.First = true;
+            uEntity.Properties.Printable = false;
+            uEntity.Properties.First = true;
 
             uEntity = XDataManage.setXData(uEntity);
 
-            LastChangeEvent?.Invoke(uEntity);
+            FirstChangeEvent?.Invoke(uEntity);
         }
 
         [CommandMethod("SETLAST", CommandFlags.UsePickSet)]
@@ -86,8 +88,8 @@ namespace AutoCadGcode
             if (uEntity == null)
                 uEntity = new UserEntity(entity, new Properties());
 
-            uEntity.properties.Printable = false;
-            uEntity.properties.Last = true;
+            uEntity.Properties.Printable = false;
+            uEntity.Properties.Last = true;
 
             uEntity = XDataManage.setXData(uEntity);
 
@@ -96,11 +98,11 @@ namespace AutoCadGcode
 
         public static int prevOrder = -1;
         [CommandMethod("SETORDER", CommandFlags.UsePickSet)]
-        public static void SetOrder(Properties propertiesOrder = null)
+        public static void SetOrder(Properties properties = null)
         {
             int order = -1;
-            if (propertiesOrder != null)
-                order = propertiesOrder.Order;
+            if (properties != null)
+                order = properties.Order;
 
             PromptSelectionResult acSSPrompt = Global.doc.Editor.GetSelection();
             List<Entity> list = ListFromSelecion(acSSPrompt);
@@ -117,7 +119,7 @@ namespace AutoCadGcode
                 order = promptInteger.Value;
                 if (order < 0)
                 {
-                    Global.editor.WriteMessage("Порядковый номер не может быть меньше нуля\n");
+                    Global.editor.WriteMessage("Порядковый номер не может быть меньше нуля для печатной линии\n");
                     return;
                 }
             }
@@ -129,11 +131,48 @@ namespace AutoCadGcode
                 if (userEntity == null)
                     userEntity = new UserEntity(entity, new Properties());
 
-                userEntity.properties.Printable = true;
-                userEntity.properties.Order = order;
+                userEntity.Properties.Printable = true;
+                userEntity.Properties.Order = order;
 
                 userEntity = XDataManage.setXData(userEntity);
                 OrderChangeEvent?.Invoke(userEntity);
+            }
+        }
+
+        [CommandMethod("SETSTOPANDPUMP", CommandFlags.UsePickSet)]
+        public static void SetStopAndPump(Properties properties = null)
+        {
+            int stopAndPump = -1;
+            if (properties != null)
+                stopAndPump = properties.StopAndPump;
+
+            PromptSelectionResult acSSPrompt = Global.doc.Editor.GetSelection();
+            List<Entity> list = ListFromSelecion(acSSPrompt);
+            if (list.Count > 1)
+                return;
+
+            if (stopAndPump == -1)
+            {
+                PromptIntegerOptions pOpts = new PromptIntegerOptions(
+                        "Пожалуйста, введите время прокачки в милисекундах: ");
+                pOpts.LowerLimit = 0;
+                PromptIntegerResult promptInteger = Global.doc.Editor.GetInteger(pOpts);
+                stopAndPump = promptInteger.Value;
+            }
+            
+            foreach (Entity entity in list)
+            {
+                UserEntity userEntity = XDataManage.getXData(entity);
+
+                if (userEntity == null)
+                    userEntity = new UserEntity(entity, new Properties());
+
+                userEntity.Properties.Printable = false;
+                userEntity.Properties.Command = true;
+                userEntity.Properties.StopAndPump = stopAndPump;
+
+                userEntity = XDataManage.setXData(userEntity);
+                StopAndPumpEvent?.Invoke(userEntity);
             }
         }
 
@@ -158,8 +197,8 @@ namespace AutoCadGcode
                 if (uEntity == null)
                     uEntity = new UserEntity(entity, new Properties());
 
-                uEntity.properties.Printable = true;
-                uEntity.properties.Pumping = true;
+                uEntity.Properties.Printable = true;
+                uEntity.Properties.Pumping = true;
 
                 uEntity = XDataManage.setXData(uEntity);
 
@@ -188,8 +227,8 @@ namespace AutoCadGcode
                 if (uEntity == null)
                     uEntity = new UserEntity(entity, new Properties());
 
-                uEntity.properties.Printable = true;
-                uEntity.properties.Pumping = false;
+                uEntity.Properties.Printable = true;
+                uEntity.Properties.Pumping = false;
 
                 uEntity = XDataManage.setXData(uEntity);
 
@@ -245,7 +284,6 @@ namespace AutoCadGcode
          */
         public static List<Entity> ListFromSelecion(PromptSelectionResult acSSPrompt)
         {
-
             List<Entity> list = new List<Entity>();
 
             // If the prompt status is OK, objects were selected
@@ -255,7 +293,6 @@ namespace AutoCadGcode
 
                 using (Transaction acTrans = Global.dB.TransactionManager.StartTransaction())
                 {
-
                     foreach (SelectedObject acSSObj in acSSet)
                     {
                         // Open the selected object for read

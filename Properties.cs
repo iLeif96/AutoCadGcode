@@ -12,8 +12,8 @@ namespace AutoCadGcode
 {
     public class Properties
     {
-        private static string _key = "version_2";
-        private static int idInc = 0;
+        private static readonly string _key = "version_2.2";
+
         public string KEY 
         {
             get
@@ -50,11 +50,24 @@ namespace AutoCadGcode
                 }
                 else
                 {
+                    Command = false;
                     First = false;
                     Last = false;
+                    StopAndPump = 0;
                 }
 
                     PropertiesList[(int)Fields.Printable] = value;
+            }
+        }
+        public bool Command
+        {
+            get
+            {
+                return Convert.ToBoolean(PropertiesList[(int)Fields.Command]);
+            }
+            set
+            {
+                PropertiesList[(int)Fields.Command] = value;
             }
         }
         public int Order
@@ -68,6 +81,17 @@ namespace AutoCadGcode
                 if (value > 0 && Printable == false)
                     return;
                 PropertiesList[(int)Fields.Order] = value;
+            }
+        }
+        public int StopAndPump
+        {
+            get
+            {
+                return Convert.ToInt32(PropertiesList[(int)Fields.StopAndPump]);
+            }
+            set
+            {
+                PropertiesList[(int)Fields.StopAndPump] = value;
             }
         }
         public bool First
@@ -101,7 +125,8 @@ namespace AutoCadGcode
             }
         }
 
-        enum Fields { KEY, Pumping, Printable, Order, First, Last }
+
+        enum Fields { KEY, Pumping, Printable, Order, Command, StopAndPump, First, Last }
 
         public object[] PropertiesList = new object[Enum.GetValues(typeof(Fields)).Length];
 
@@ -112,6 +137,8 @@ namespace AutoCadGcode
             Pumping = pump;
             Printable = true;
             Order = 0;
+            Command = false;
+            StopAndPump = 0;
             First = false;
             Last = false;
         }
@@ -121,11 +148,9 @@ namespace AutoCadGcode
             ResultBuffer rb = new ResultBuffer();
 
             rb.Add(new TypedValue((int)DxfCode.ExtendedDataRegAppName, Convert.ToString(KEY)));
-            rb.Add(new TypedValue((int)DxfCode.ExtendedDataAsciiString, Convert.ToString(Pumping)));
-            rb.Add(new TypedValue((int)DxfCode.ExtendedDataAsciiString, Convert.ToString(Printable)));
-            rb.Add(new TypedValue((int)DxfCode.ExtendedDataAsciiString, Convert.ToString(Order)));
-            rb.Add(new TypedValue((int)DxfCode.ExtendedDataAsciiString, Convert.ToString(First)));
-            rb.Add(new TypedValue((int)DxfCode.ExtendedDataAsciiString, Convert.ToString(Last)));          
+            for (int i = (int)Fields.KEY + 1; i < PropertiesList.Length; i++)
+                rb.Add(new TypedValue((int)DxfCode.ExtendedDataAsciiString,
+                    Convert.ToString(PropertiesList[i])));         
                 
             return rb;
         }
@@ -138,12 +163,34 @@ namespace AutoCadGcode
             if (arr[0].Value as string != props.KEY)
                 return null;
 
+            Type type;
+            for (int i = (int)(Fields.KEY + 1); i < props.PropertiesList.Length; i++)
+            {
+                type = props.PropertiesList[i].GetType();
 
-            props.Pumping = Convert.ToBoolean(arr[(int)Fields.Pumping].Value);
-            props.Printable = Convert.ToBoolean(arr[(int)Fields.Printable].Value);
-            props.Order = Convert.ToInt32(arr[(int)Fields.Order].Value);
-            props.First = Convert.ToBoolean(arr[(int)Fields.First].Value);
-            props.Last = Convert.ToBoolean(arr[(int)Fields.Last].Value);
+                if (type == typeof(int))
+                    props.PropertiesList[i] = Convert.ToInt32(arr[i].Value);
+                else if (type == typeof(bool))
+                    props.PropertiesList[i] = Convert.ToBoolean(arr[i].Value);
+                else if (type == typeof(double))
+                    props.PropertiesList[i] = Convert.ToDouble(arr[i].Value);
+                else if (type == typeof(string))
+                    props.PropertiesList[i] = Convert.ToString(arr[i].Value);
+                else
+                    throw new Exception("Unresolved type in properties");
+
+                //type = props.PropertiesList[i].GetType();
+                //props.PropertiesList[i] =
+                //    type.GetMethod("Parse").Invoke(props.PropertiesList[i], new object[] { arr[i].Value });
+            }
+
+            //props.Pumping = Convert.ToBoolean(arr[(int)Fields.Pumping].Value);
+            //props.Printable = Convert.ToBoolean(arr[(int)Fields.Printable].Value);
+            //props.Order = Convert.ToInt32(arr[(int)Fields.Order].Value);
+            //props.Command = Convert.ToBoolean(arr[(int)Fields.Command].Value);
+            //props.StopAndPump = Convert.ToInt32(arr[(int)Fields.StopAndPump].Value);
+            //props.First = Convert.ToBoolean(arr[(int)Fields.First].Value);
+            //props.Last = Convert.ToBoolean(arr[(int)Fields.Last].Value);
 
             return props;
         }

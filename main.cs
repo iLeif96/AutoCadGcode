@@ -23,6 +23,11 @@ namespace AutoCadGcode
 
     public class Global : IExtensionApplication
     {
+        /// <summary>
+        /// Using for approximate autocad Points coordinates
+        /// </summary>
+        public const double HYSTERESIS = 0.01;
+
         public delegate void DocumentLoadedHandler(List<Entity> list = null);
         public static event DocumentLoadedHandler DocumentLoadedEvent;
 
@@ -36,6 +41,8 @@ namespace AutoCadGcode
 
         public void Initialize()
         {
+            Global.editor.WriteMessage("AutoCadGcode by Svetoslav Elkin\n");
+
             Process.Start();
             DocumentLoadedEvent?.Invoke();
         }

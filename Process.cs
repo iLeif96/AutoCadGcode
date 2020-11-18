@@ -23,8 +23,6 @@ namespace AutoCadGcode
             CreateObjects();
             CreateHandling();
             API.ValidateEntities();
-
-            Global.editor.WriteMessage("AutoCadGcode by Svetoslav Elkin now is ready to work/n");
         }
         private static void CreateObjects()
         {
@@ -72,9 +70,9 @@ namespace AutoCadGcode
                     {
                         using (Entity temp = acTrans.GetObject(uEntity.ObjectId, OpenMode.ForWrite) as Entity)
                         {
-                            if (uEntity.properties.Printable == false)
+                            if (uEntity.Properties.Printable == false)
                                 temp.Color = Color.FromRgb(150, 150, 150); //gray
-                            else if (uEntity.properties.Pumping == true)
+                            else if (uEntity.Properties.Pumping == true)
                                 temp.Color = Color.FromRgb(50, 200, 50); //green
                             else
                                 temp.Color = Color.FromRgb(50, 50, 200); //blue
