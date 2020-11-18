@@ -27,15 +27,14 @@ namespace AutoCadGcode
 
             Type type = entity.GetType();
 
-            if (type.Name != "Line" && type.Name != "Polyline" && type.Name != "Arc")
+            if (type ==  AvailableTypes.LINE || type == AvailableTypes.POLYLINE || type == AvailableTypes.ARC)
                 result = true;
 
-            if (type.Name == "Polyline")
+            if (type == AvailableTypes.POLYLINE)
             {
                 try
                 {
-                    Polyline polyline = entity as Polyline;
-                    //foreach (Entity entity in polyline.)
+                    Polyline polyline = (Polyline)entity as Polyline;
                 }
                 catch (Exception e)
                 {
