@@ -11,9 +11,10 @@ namespace AutoCadGcode
 {
     public static class Process
     {
-        public static GUI Gui { get; set; }
+        public static GUI GuiInstance { get; set; }
+        public static Validation ValidationInstance { get; set; }
+        public static GcodeGenerator GcodeGeneratorInstance { get; set; }
 
-        public static Validation Validation { get; set; }
 
         public static Dictionary<ObjectId, UserEntity> UEntitys { get; set; }
 
@@ -28,8 +29,9 @@ namespace AutoCadGcode
         private static void CreateObjects()
         {
             UEntitys = new Dictionary<ObjectId, UserEntity>();
-            Gui = new GUI();
-            Validation = new Validation();
+            GuiInstance = new GUI();
+            ValidationInstance = new Validation();
+            GcodeGeneratorInstance = new GcodeGenerator();
         }
         private static void CreateHandling()
         {
@@ -41,7 +43,7 @@ namespace AutoCadGcode
         }
         private static void OnDatabaseChanged(object sender, EventArgs e)
         {
-            Validation.isValidated = false;
+            ValidationInstance.isValidated = false;
         }
         private static void OnValidateEntities()
         {
@@ -49,7 +51,7 @@ namespace AutoCadGcode
             {
                 UEntitys = new Dictionary<ObjectId, UserEntity>();
                 SetUserEntitys();
-                Validation.StartValidation(UEntitys.Values.ToList<UserEntity>());
+                ValidationInstance.StartValidation(UEntitys.Values.ToList<UserEntity>());
             }
             catch(Exception e)
             {
