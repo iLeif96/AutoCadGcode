@@ -30,13 +30,13 @@ namespace AutoCadGcode
 
         public static UserEntity setXData(UserEntity uEntity)
         {
-            using (DocumentLock docLock = Global.doc.LockDocument())
+            using (DocumentLock docLock = Global.Doc.LockDocument())
             {
-                using (Transaction acTrans = Global.dB.TransactionManager.StartTransaction())
+                using (Transaction acTrans = Global.DB.TransactionManager.StartTransaction())
                 {
 
                     RegAppTable acRegAppTbl;
-                    acRegAppTbl = acTrans.GetObject(Global.dB.RegAppTableId, OpenMode.ForRead) as RegAppTable;
+                    acRegAppTbl = acTrans.GetObject(Global.DB.RegAppTableId, OpenMode.ForRead) as RegAppTable;
 
                     // Check to see if the Registered Applications table record for the custom app exists
                     if (acRegAppTbl.Has(uEntity.Properties.KEY) == false)
@@ -44,7 +44,7 @@ namespace AutoCadGcode
                         using (RegAppTableRecord acRegAppTblRec = new RegAppTableRecord())
                         {
                             acRegAppTblRec.Name = uEntity.Properties.KEY;
-                            acTrans.GetObject(Global.dB.RegAppTableId, OpenMode.ForWrite);
+                            acTrans.GetObject(Global.DB.RegAppTableId, OpenMode.ForWrite);
                             acRegAppTbl.Add(acRegAppTblRec);
                             acTrans.AddNewlyCreatedDBObject(acRegAppTblRec, true);
                         }
@@ -59,7 +59,7 @@ namespace AutoCadGcode
                     }
                     // Save the new object to the database
                     acTrans.Commit();
-                    Global.editor.WriteMessage(uEntity.Properties.ToString());
+                    Global.Editor.WriteMessage(uEntity.Properties.ToString());
                     return uEntity;
                 }
             }
@@ -83,7 +83,7 @@ namespace AutoCadGcode
 
         public static UserEntity getXData(Entity entity)
         {
-            using (Transaction acTrans = Global.dB.TransactionManager.StartTransaction())
+            using (Transaction acTrans = Global.DB.TransactionManager.StartTransaction())
             {
                 Properties props = new Properties();
 

@@ -12,6 +12,8 @@ namespace AutoCadGcode
 {
     public class API
     {
+        public delegate void SetPrintableHandler(UserEntity userEntity);
+        public delegate void SetNonPrintableHandler(UserEntity userEntity);
         public delegate void PumpingChangeHandler(UserEntity userEntity);
         public delegate void FirstChangeHandler(UserEntity userEntity);
         public delegate void LastChangeHandler(UserEntity userEntity);
@@ -20,6 +22,8 @@ namespace AutoCadGcode
         public delegate void EntitiesValidateHandler();
         public delegate void BuildGcodeHandler();
 
+        public static event SetPrintableHandler SetPrintableEvent;
+        public static event SetNonPrintableHandler SetNonPrintableEvent;
         public static event PumpingChangeHandler PumpingChangeEvent;
         public static event FirstChangeHandler FirstChangeEvent;
         public static event LastChangeHandler LastChangeEvent;
@@ -37,7 +41,7 @@ namespace AutoCadGcode
         [CommandMethod("SAYHI")]
         public static void SayHi()
         {
-            Global.editor.WriteMessage("NOW IS OK");
+            Global.Editor.WriteMessage("NOW IS OK");
         }
 
         /**
@@ -50,7 +54,7 @@ namespace AutoCadGcode
             List<Entity> list = null;
             if (entity == null)
             {
-                PromptSelectionResult acSSPrompt = Global.doc.Editor.GetSelection();
+                PromptSelectionResult acSSPrompt = Global.Doc.Editor.GetSelection();
                 list = ListFromSelecion(acSSPrompt);
                 if (list.Count == 0)
                     return;
@@ -76,7 +80,7 @@ namespace AutoCadGcode
             List<Entity> list = null;
             if (entity == null)
             {
-                PromptSelectionResult acSSPrompt = Global.doc.Editor.GetSelection();
+                PromptSelectionResult acSSPrompt = Global.Doc.Editor.GetSelection();
                 list = ListFromSelecion(acSSPrompt);
                 if (list.Count == 0)
                     return;
@@ -104,7 +108,7 @@ namespace AutoCadGcode
             if (properties != null)
                 order = properties.Order;
 
-            PromptSelectionResult acSSPrompt = Global.doc.Editor.GetSelection();
+            PromptSelectionResult acSSPrompt = Global.Doc.Editor.GetSelection();
             List<Entity> list = ListFromSelecion(acSSPrompt);
             if (list.Count == 0)
                 return;
@@ -115,11 +119,11 @@ namespace AutoCadGcode
                         "Пожалуйста, введите порядковый номер линии в чертеже: ");
                 pOpts.LowerLimit = -1;
                 pOpts.DefaultValue = API.prevOrder + 1;
-                PromptIntegerResult promptInteger = Global.doc.Editor.GetInteger(pOpts);
+                PromptIntegerResult promptInteger = Global.Doc.Editor.GetInteger(pOpts);
                 order = promptInteger.Value;
                 if (order < 0)
                 {
-                    Global.editor.WriteMessage("Порядковый номер не может быть меньше нуля для печатной линии\n");
+                    Global.Editor.WriteMessage("Порядковый номер не может быть меньше нуля для печатной линии\n");
                     return;
                 }
             }
@@ -146,7 +150,7 @@ namespace AutoCadGcode
             if (properties != null)
                 stopAndPump = properties.StopAndPump;
 
-            PromptSelectionResult acSSPrompt = Global.doc.Editor.GetSelection();
+            PromptSelectionResult acSSPrompt = Global.Doc.Editor.GetSelection();
             List<Entity> list = ListFromSelecion(acSSPrompt);
             if (list.Count > 1)
                 return;
@@ -156,7 +160,7 @@ namespace AutoCadGcode
                 PromptIntegerOptions pOpts = new PromptIntegerOptions(
                         "Пожалуйста, введите время прокачки в милисекундах: ");
                 pOpts.LowerLimit = 0;
-                PromptIntegerResult promptInteger = Global.doc.Editor.GetInteger(pOpts);
+                PromptIntegerResult promptInteger = Global.Doc.Editor.GetInteger(pOpts);
                 stopAndPump = promptInteger.Value;
             }
             
@@ -176,12 +180,71 @@ namespace AutoCadGcode
             }
         }
 
+        [CommandMethod("SETPRINTABLE", CommandFlags.UsePickSet)]
+        public static void SetPrintable(List<Entity> list = null)
+        {
+            if (list == null)
+            {
+                PromptSelectionResult acSSPrompt = Global.Doc.Editor.GetSelection();
+                list = ListFromSelecion(acSSPrompt);
+                if (list.Count == 0)
+                    return;
+            }
+            UserEntity uEntity;
+
+            if (list.Count < 1)
+                return;
+
+            foreach (Entity entity in list)
+            {
+                uEntity = XDataManage.getXData(entity);
+                if (uEntity == null)
+                    uEntity = new UserEntity(entity, new Properties());
+
+                uEntity.Properties.Printable = true;
+
+                uEntity = XDataManage.setXData(uEntity);
+
+                SetPrintableEvent?.Invoke(uEntity);
+            }
+        }
+
+        [CommandMethod("SETNONPRINTABLE", CommandFlags.UsePickSet)]
+        public static void SetNonPrintable(List<Entity> list = null)
+        {
+            if (list == null)
+            {
+                PromptSelectionResult acSSPrompt = Global.Doc.Editor.GetSelection();
+                list = ListFromSelecion(acSSPrompt);
+                if (list.Count == 0)
+                    return;
+            }
+            UserEntity uEntity;
+
+            if (list.Count < 1)
+                return;
+
+            foreach (Entity entity in list)
+            {
+                uEntity = XDataManage.getXData(entity);
+                if (uEntity == null)
+                    uEntity = new UserEntity(entity, new Properties());
+
+                uEntity.Properties.Printable = false;
+                uEntity.Properties.Pumping = false;
+
+                uEntity = XDataManage.setXData(uEntity);
+
+                SetNonPrintableEvent?.Invoke(uEntity);
+            }
+        }
+
         [CommandMethod("SETPUMPINGTRUE", CommandFlags.UsePickSet)]
         public static void SetPumpingTrue(List<Entity> list = null)
         {
             if (list == null)
             {
-                PromptSelectionResult acSSPrompt = Global.doc.Editor.GetSelection();
+                PromptSelectionResult acSSPrompt = Global.Doc.Editor.GetSelection();
                 list = ListFromSelecion(acSSPrompt);
                 if (list.Count == 0)
                     return;
@@ -211,7 +274,7 @@ namespace AutoCadGcode
         {
             if (list == null)
             {
-                PromptSelectionResult acSSPrompt = Global.doc.Editor.GetSelection();
+                PromptSelectionResult acSSPrompt = Global.Doc.Editor.GetSelection();
                 list = ListFromSelecion(acSSPrompt);
                 if (list.Count == 0)
                     return;
@@ -241,7 +304,7 @@ namespace AutoCadGcode
         {
             if (list == null)
             {
-                PromptSelectionResult acSSPrompt = Global.doc.Editor.GetSelection();
+                PromptSelectionResult acSSPrompt = Global.Doc.Editor.GetSelection();
                 list = ListFromSelecion(acSSPrompt);
                 if (list.Count == 0)
                     return;
@@ -258,10 +321,8 @@ namespace AutoCadGcode
         {
             if (list == null)
             {
-                PromptSelectionResult acSSPrompt = Global.doc.Editor.GetSelection();
+                PromptSelectionResult acSSPrompt = Global.Doc.Editor.GetSelection();
                 list = ListFromSelecion(acSSPrompt);
-                if (list.Count == 0)
-                    return null;
             }
 
             return XDataManage.getXData(list);
@@ -291,7 +352,7 @@ namespace AutoCadGcode
             {
                 SelectionSet acSSet = acSSPrompt.Value;
 
-                using (Transaction acTrans = Global.dB.TransactionManager.StartTransaction())
+                using (Transaction acTrans = Global.DB.TransactionManager.StartTransaction())
                 {
                     foreach (SelectedObject acSSObj in acSSet)
                     {
@@ -303,7 +364,7 @@ namespace AutoCadGcode
                 }
             }
             else
-                Global.editor.WriteMessage("There is problem in selection");
+                Global.Editor.WriteMessage("There is problem in selection");
 
             return list;
         }
@@ -311,7 +372,7 @@ namespace AutoCadGcode
         public static UserEntity FindUserEntityByObjectId(ObjectId objectId)
         {
             UserEntity uEntity = null;
-            using (Transaction acTrans = Global.dB.TransactionManager.StartTransaction())
+            using (Transaction acTrans = Global.DB.TransactionManager.StartTransaction())
             {
                 var ent = acTrans.GetObject(objectId, OpenMode.ForRead) as Entity;
                 uEntity = XDataManage.getXData(ent);

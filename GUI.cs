@@ -10,6 +10,7 @@ using System.Windows.Media.Imaging;
 using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.EditorInput;
 using System.Windows.Input;
+using Autodesk.AutoCAD.ApplicationServices;
 
 namespace AutoCadGcode
 {
@@ -18,12 +19,17 @@ namespace AutoCadGcode
         public delegate void VirtaulParametersChangedHandler();
         public static event VirtaulParametersChangedHandler VirtaulParametersChangedEvent;
 
-        //Need to reciving information about selected object
+        /// <summary>
+        /// Need to reciving information about selected object
+        /// </summary>
         public static UserEntity ActiveEntity { get; set; } = null;
-        //Store last selected object`s properties for display they.
-        //Diiference with activeEntity is that after removing the selection
-        //information is not lost here
+
         private static Properties _virtualProperies = new Properties();
+        /// <summary>
+        ///Store last selected object`s properties for display they.
+        ///Diiference with activeEntity is that after removing the selection
+        ///information is not lost here
+        /// </summary>
         public static Properties VirtualProperies
         {
             get { return _virtualProperies; }
@@ -33,19 +39,32 @@ namespace AutoCadGcode
                 GUI.VirtaulParametersChangedEvent?.Invoke();
             }
         }
-        
+
+        public ButtonClickHandler buttonClickHandler = new ButtonClickHandler();
+
+        private List<RibbonButton> buttonsList = new List<RibbonButton>();
+        private List<RibbonSpinner> spinnersList = new List<RibbonSpinner>();
+
+        /***
+         * User interface items
+         */
+
         protected RibbonButton setPumpingTrueButton = new RibbonButton();
         protected RibbonButton setPumpingFalseButton = new RibbonButton();
         protected RibbonSpinner setOrderSpinner = new RibbonSpinner();
         protected RibbonButton setOrderButton = new RibbonButton();
+        protected RibbonButton setPrintableButton = new RibbonButton();
         protected RibbonPanelSource rbPrintablePanelSource = new RibbonPanelSource();
+        protected RibbonRowPanel rbPrintableRowPanel = new RibbonRowPanel();
         protected RibbonPanel rbPrintablePanel = new RibbonPanel();
 
         protected RibbonSpinner stopAndPumpSpinner = new RibbonSpinner();
         protected RibbonButton stopAndPumpButton = new RibbonButton();
         protected RibbonButton setFirstButton = new RibbonButton();
         protected RibbonButton setLastButton = new RibbonButton();
+        protected RibbonButton setNonPrintableButton = new RibbonButton();
         private RibbonPanelSource rbNotPrintablePanelSource = new RibbonPanelSource();
+        protected RibbonRowPanel rbNotPrintableRowPanel = new RibbonRowPanel();
         private RibbonPanel rbNotPrintablePanel = new RibbonPanel();
 
         protected RibbonButton validateEntitiesButton = new RibbonButton();
@@ -67,16 +86,22 @@ namespace AutoCadGcode
             /**
              * Properties
              */
+
+            setPumpingTrueButton.Name = "setPumpingTrueButton";
             setPumpingTrueButton.Id = "_setPumpingTrueButton";
             setPumpingTrueButton.Size = RibbonItemSize.Standard;
             setPumpingTrueButton.Text = "С бетоном";
             setPumpingTrueButton.ShowText = true;
+            buttonsList.Add(setPumpingTrueButton);
 
+            setPumpingFalseButton.Name = "setPumpingFalseButton";
             setPumpingFalseButton.Id = "_setPumpingFalseButton";
             setPumpingFalseButton.Size = RibbonItemSize.Standard;
             setPumpingFalseButton.Text = "Без бетона";
             setPumpingFalseButton.ShowText = true;
+            buttonsList.Add(setPumpingFalseButton);
 
+            setOrderSpinner.Name = "setOrderSpinner";
             setOrderSpinner.Id = "_setOrder";
             setOrderSpinner.Size = RibbonItemSize.Standard;
             setOrderSpinner.Text = "Порядок печати";
@@ -87,26 +112,37 @@ namespace AutoCadGcode
             setOrderSpinner.Width = 150;
             setOrderSpinner.IsEditable = true;
             setOrderSpinner.IsEnabled = true;
+            spinnersList.Add(setOrderSpinner);
 
+            setOrderButton.Name = "setOrderButton";
             setOrderButton.Id = "_setOrderButton";
             setOrderButton.Size = RibbonItemSize.Standard;
             setOrderButton.Text = "Применить";
             setOrderButton.ShowText = true;
+            buttonsList.Add(setOrderButton);
+
+            setPrintableButton.Name = "setPrintableButton";
+            setPrintableButton.Id = "_setOrderButton";
+            setPrintableButton.Size = RibbonItemSize.Large;
+            setPrintableButton.Text = "В печатную\nлинию";
+            setPrintableButton.ShowText = true;
+            buttonsList.Add(setPrintableButton);
 
             rbPrintablePanelSource.Title = "Параметры печатных линий";
+            rbPrintablePanelSource.Items.Add(setPrintableButton);
+            rbPrintablePanelSource.Items.Add(new RibbonSeparator());
             rbPrintablePanelSource.Items.Add(setPumpingTrueButton);
             rbPrintablePanelSource.Items.Add(new RibbonSeparator());
             rbPrintablePanelSource.Items.Add(setPumpingFalseButton);
             rbPrintablePanelSource.Items.Add(new RibbonRowBreak());
             rbPrintablePanelSource.Items.Add(setOrderSpinner);
             rbPrintablePanelSource.Items.Add(setOrderButton);
-
             rbPrintablePanel.Source = rbPrintablePanelSource;
 
             /**
              * Not printable parameters
              */
-
+            stopAndPumpSpinner.Name = "stopAndPumpSpinner";
             stopAndPumpSpinner.Id = "_setOrder";
             stopAndPumpSpinner.Size = RibbonItemSize.Standard;
             stopAndPumpSpinner.Text = "Прокачка (мс)";
@@ -117,23 +153,39 @@ namespace AutoCadGcode
             stopAndPumpSpinner.Width = 150;
             stopAndPumpSpinner.IsEditable = true;
             stopAndPumpSpinner.IsEnabled = true;
+            spinnersList.Add(stopAndPumpSpinner);
 
+            stopAndPumpButton.Name = "stopAndPumpButton";
             stopAndPumpButton.Id = "_stopAndPump";
             stopAndPumpButton.Size = RibbonItemSize.Standard;
             stopAndPumpButton.Text = "Применить";
             stopAndPumpButton.ShowText = true;
+            buttonsList.Add(stopAndPumpButton);
 
+            setFirstButton.Name = "setFirstButton";
             setFirstButton.Id = "_setFirst";
             setFirstButton.Size = RibbonItemSize.Standard;
             setFirstButton.Text = "Первая";
             setFirstButton.ShowText = true;
+            buttonsList.Add(setFirstButton);
 
+            setLastButton.Name = "setLastButton";
             setLastButton.Id = "_setLast";
             setLastButton.Size = RibbonItemSize.Standard;
             setLastButton.Text = "Последняя";
             setLastButton.ShowText = true;
+            buttonsList.Add(setLastButton);
+
+            setNonPrintableButton.Name = "setNonPrintableButton";
+            setNonPrintableButton.Id = "_setOrderButton";
+            setNonPrintableButton.Size = RibbonItemSize.Large;
+            setNonPrintableButton.Text = "В непечатную\nлинию";
+            setNonPrintableButton.ShowText = true;
+            buttonsList.Add(setNonPrintableButton);
 
             rbNotPrintablePanelSource.Title = "Параметры непечатных линий";
+            rbNotPrintablePanelSource.Items.Add(setNonPrintableButton);
+            rbNotPrintablePanelSource.Items.Add(new RibbonSeparator());
             rbNotPrintablePanelSource.Items.Add(setFirstButton);
             rbNotPrintablePanelSource.Items.Add(new RibbonSeparator());
             rbNotPrintablePanelSource.Items.Add(setLastButton);
@@ -146,17 +198,22 @@ namespace AutoCadGcode
              * Validation and building
              */
 
+            validateEntitiesButton.Name = "validateEntitiesButton";
             validateEntitiesButton.Id = "_validateEntitiesButton";
-            validateEntitiesButton.CommandHandler = new ValidateEntitiesHandler();
             validateEntitiesButton.Size = RibbonItemSize.Standard;
             validateEntitiesButton.Text = "Валидация";
             validateEntitiesButton.ShowText = true;
+            buttonsList.Add(validateEntitiesButton);
 
+            buildGcodeButton.Name = "buildGcodeButton";
             buildGcodeButton.Id = "_buildGcodeButton";
-            buildGcodeButton.CommandHandler = new buildGcodeHandler();
             buildGcodeButton.Size = RibbonItemSize.Standard;
             buildGcodeButton.Text = "Построить Gcode";
             buildGcodeButton.ShowText = true;
+            buttonsList.Add(buildGcodeButton);
+
+            
+            
 
             rbValidatePanelSource.Title = "Валидация и запуск";
             rbValidatePanelSource.Items.Add(validateEntitiesButton);
@@ -171,67 +228,132 @@ namespace AutoCadGcode
             rbTab.Panels.Add(rbNotPrintablePanel);
             rbTab.Panels.Add(rbValidatePanel);
 
-
             rbCntrl.Tabs.Add(rbTab);
-
+ 
             rbTab.IsActive = true;
         }
         private void CreateHandling()
         {
-            Global.doc.ImpliedSelectionChanged += OnChangeSelectedObjectHandler;
-            //Global.editor.SelectionAdded += OnChangeSelectedObjectHandler;
-            //Global.editor.SelectionRemoved += OnChangeSelectedObjectHandler;
-            XDataManage.PropertiesChangeEvent += OnChangeParametersHandler;
-            Validation.ValidateEntitiesEvent += ValidationChecking;
-            GUI.VirtaulParametersChangedEvent += OnVirtualParametersChangedHandler;
 
-            setPumpingTrueButton.CommandHandler = new SetPumpingTrueHandler();
-            setPumpingFalseButton.CommandHandler = new SetPumpingFalseHandler();
-            setOrderButton.CommandHandler = new SetOrderHandler();
-            stopAndPumpButton.CommandHandler = new StopAndPumpHandler();
-            setFirstButton.CommandHandler = new SetFirstHandler();
-            setLastButton.CommandHandler = new SetLastHandler();
+            //Work with selected object. TODO: its stop to work sometimes
+            Global.DocumentManager.DocumentActivated += (object sender, DocumentCollectionEventArgs e) =>
+            {
+                Global.Doc.ImpliedSelectionChanged -= OnChangeSelectedObjectHandler;
+                Global.Doc.ImpliedSelectionChanged += OnChangeSelectedObjectHandler;
+            };
+            Global.Doc.ImpliedSelectionChanged += OnChangeSelectedObjectHandler;
+            //Global.editor.SelectionAdded += GuiInstance.OnChangeSelectedObjectHandler;
+            //Global.editor.SelectionRemoved += GuiInstance.OnChangeSelectedObjectHandler;
 
-            setOrderSpinner.ValueChanged += SetOrderSpinHandler;
-            stopAndPumpSpinner.ValueChanged += StopAndPumpSpinHandler;
+            //Action after changing VirtualProperies selected entity
+            ///VirtaulParametersChangedEvent += OnVirtualParametersChangedHandler;
+
+            //Set actions for buttons
+            buttonClickHandler.ClickEvent += OnButtonClickHandler;
+            foreach (RibbonButton rB in buttonsList)
+                rB.CommandHandler = buttonClickHandler;
+
+
+            //Set actions for spinners
+            foreach (RibbonSpinner rS in spinnersList)
+                rS.ValueChanged += OnSpinnerValueChangeHandler;
         }
 
-        //Function for changing ribbon items attributes after incoming properties recived
-        private void AttributesChanging()
+        /// <summary>
+        /// Function for change ribbon items attributes after incoming properties recived
+        /// </summary>
+        private void ChangeAttributes()
         {
             //Set attributes that are not affected by deselecting
-            setOrderSpinner.Value = VirtualProperies.Order;
-            stopAndPumpSpinner.Value = VirtualProperies.StopAndPump;
-
-
-            if (ActiveEntity != null) //if we have selected entity then set some attributes
+            //TODO:
+            
+            //if we have selected entity then set some attributes
+            if (ActiveEntity != null) 
             {
-                //TODO
+                if (VirtualProperies.Printable == true)
+                {
+                    foreach (var item in rbNotPrintablePanelSource.Items)
+                        item.IsVisible = false;
+                    foreach (var item in rbPrintablePanelSource.Items)
+                        item.IsVisible = true;
+
+                    setOrderSpinner.Value = VirtualProperies.Order;
+                    setPrintableButton.IsEnabled = false;
+                    setNonPrintableButton.IsEnabled = true;
+                }
+                else
+                {
+                    foreach (var item in rbNotPrintablePanelSource.Items)
+                        item.IsVisible = true;
+                    foreach (var item in rbPrintablePanelSource.Items)
+                        item.IsVisible = false;
+
+                    stopAndPumpSpinner.Value = VirtualProperies.StopAndPump;
+                    setPrintableButton.IsEnabled = true;
+                    setNonPrintableButton.IsEnabled = false;
+                }
+                setPrintableButton.IsVisible = true;
+                setNonPrintableButton.IsVisible = true;
+                
             }
-            else //If we have not selected entity then clear some attributes
+            //If we have not selected entity then clear some attributes
+            else 
             {
-                //TODO
+                foreach (var item in rbNotPrintablePanelSource.Items)
+                    item.IsVisible = true;
+                foreach (var item in rbPrintablePanelSource.Items)
+                    item.IsVisible = true;
+                setPrintableButton.IsEnabled = true;
+                setNonPrintableButton.IsEnabled = true;
+                setOrderSpinner.Value = 0;
+                stopAndPumpSpinner.Value = 0;
             }
         }
-        
-        //Then validation changing we need to disable or enable the Build button
-        private void ValidationChecking(bool isValidated)
+
+        /***
+         * Global handlers that must applyed from main process
+         */
+
+        /// <summary>
+        /// Then validation changing we need to disable or enable the Build button
+        /// </summary>
+        public void OnValidationChangingHandler(bool isValidated)
         {
             if (isValidated == true)
                 this.buildGcodeButton.IsEnabled = true;
             else
                 this.buildGcodeButton.IsEnabled = false;
         }
-        //Handler for reciving information about selected entity
-        private void OnChangeSelectedObjectHandler(object sender, EventArgs e)
-        {
 
-            PromptSelectionResult res = Global.editor.SelectImplied();
+        /// <summary>
+        /// Handler for situation then entities lost focus after changing parameter
+        /// </summary>
+        public void OnChangeParametersHandler(UserEntity uEntity)
+        {
+            if (ActiveEntity == null) //Check for selected entity
+                VirtualProperies = uEntity.Properties;
+        }
+
+        /***
+         * Handlers that should apllyed inside the inctance
+         */
+        /// <summary>
+        /// Handler for reciving information about selected entity
+        /// </summary>
+        public void OnChangeSelectedObjectHandler(object sender, EventArgs e)
+        {
+            PromptSelectionResult res = Global.Editor.SelectImplied();
             if (res.Value != null)
             {
                 var list = API.ListFromSelecion(res);
                 if (list != null && list.Count > 0)
-                    ActiveEntity = API.GetXData(list).Last<UserEntity>();
+                {
+                    var tempList = API.GetXData(list);
+                    if (tempList.Count == 0)
+                        ActiveEntity = null;
+                    else
+                        ActiveEntity = tempList.Last<UserEntity>();
+                }
             }
             else
                 ActiveEntity = null;
@@ -240,37 +362,77 @@ namespace AutoCadGcode
             {
                 VirtualProperies = ActiveEntity.Properties;
             }
+
+            ChangeAttributes();
         }
-        
-        //Handler for situation then entities lost focus after changing parameter
-        private void OnChangeParametersHandler(UserEntity uEntity)
-        {
-            if (ActiveEntity == null) //Check for selected entity
-                VirtualProperies = uEntity.Properties;
-        }
-        //Handler for 
+        /// <summary>
+        /// Handler should invoked after virtual parameters change; Need for change attributes
+        /// </summary>
         private void OnVirtualParametersChangedHandler()
         {
-            AttributesChanging();
+            ChangeAttributes();
+        }
+        /// <summary>
+        /// Handler for all of buttons (for work with ICommand interface)
+        /// </summary>
+        private void OnButtonClickHandler(RibbonButton rB)
+        {
+            if (rB == null)
+                throw new Exception("There are no Ribbon button inctance for event");
+
+            if (rB.Name == "")
+                throw new Exception("There are no name for Ribbon button inctance for event");
+            else if (rB.Name == setPrintableButton.Name)
+                API.SetPrintable();
+            else if (rB.Name == setNonPrintableButton.Name)
+                API.SetNonPrintable();
+            else if (rB.Name == setPumpingTrueButton.Name)
+                API.SetPumpingTrue();
+            else if (rB.Name == setPumpingFalseButton.Name)
+                API.SetPumpingFalse();
+            else if (rB.Name == setOrderButton.Name)
+                API.SetOrder(VirtualProperies);
+            else if (rB.Name == stopAndPumpButton.Name)
+                API.SetStopAndPump(VirtualProperies);
+            else if (rB.Name == setFirstButton.Name)
+                API.SetFirst();
+            else if (rB.Name == setLastButton.Name)
+                API.SetLast();
+            else if (rB.Name == validateEntitiesButton.Name)
+                API.ValidateEntities();
+            else if (rB.Name == buildGcodeButton.Name)
+                API.BuildGcode();
+            else
+                throw new Exception("For " + rB.Name + " not found any action");
+        }
+        /// <summary>
+        ///Handler for all of spinners (for transfer values from spinners to VirtualProperties)
+        /// </summary>
+        private void OnSpinnerValueChangeHandler(object sender, System.ComponentModel.PropertyChangedEventArgs e)
+        {
+            RibbonSpinner rS = sender as RibbonSpinner;
+            if (rS == null)
+                throw new Exception("There are no Ribbon spinner inctance for event");
+
+            if (rS.Name == "")
+                throw new Exception("There are no name for Ribbon spinner inctance for event");
+            else if (rS.Name == setOrderSpinner.Name)
+                VirtualProperies.Order = Convert.ToInt32(rS.TextValue);
+            else if (rS.Name == stopAndPumpSpinner.Name)
+                VirtualProperies.StopAndPump = Convert.ToInt32(rS.TextValue);
+            else
+                throw new Exception("For " + rS.Name + " not found any action");
         }
 
-        //Handler for transfer value from orderSpinner to virtualProperies
-        private void SetOrderSpinHandler(object sender, System.ComponentModel.PropertyChangedEventArgs e)
-        {
-            VirtualProperies.Order = Convert.ToInt32((sender as RibbonSpinner).TextValue);
-        }
-        //Handler for transfer value from stopAndPumpSpinner to virtualProperies
-
-        private void StopAndPumpSpinHandler(object sender, System.ComponentModel.PropertyChangedEventArgs e)
-        {
-            VirtualProperies.StopAndPump = Convert.ToInt32((sender as RibbonSpinner).TextValue);
-        }
     }
-
-    public class SetPumpingTrueHandler : System.Windows.Input.ICommand
+    /// <summary>
+    /// Rudiment from AutoCad and WPF. But its need to use buttons clicks
+    /// </summary>
+    public class ButtonClickHandler : System.Windows.Input.ICommand
     {
-
         public event EventHandler CanExecuteChanged;
+        public delegate void ClickHandler(RibbonButton rB);
+        public event ClickHandler ClickEvent;
 
         public bool CanExecute(object e)
         {
@@ -279,117 +441,14 @@ namespace AutoCadGcode
 
         public void Execute(object e)
         {
-            API.SetPumpingTrue();
-        }
-    }
+            RibbonButton rB = null;
+            try { rB = e as RibbonButton; }
+            catch (Exception err) { Global.Editor.WriteMessage("Event in GUI not work: " + err); }
 
-    public class SetPumpingFalseHandler : System.Windows.Input.ICommand
-    {
-
-        public event EventHandler CanExecuteChanged;
-
-        public bool CanExecute(object e)
-        {
-            return true;
-        }
-
-        public void Execute(object e)
-        {
-            API.SetPumpingFalse();
-        }
-    }
-
-    public class SetOrderHandler : System.Windows.Input.ICommand
-    {
-
-        public event EventHandler CanExecuteChanged;
-
-        public bool CanExecute(object e)
-        {
-            return true;
-        }
-
-        public void Execute(object e)
-        {
-            API.SetOrder(GUI.VirtualProperies);
-        }
-    }
-
-    public class StopAndPumpHandler : System.Windows.Input.ICommand
-    {
-        public event EventHandler CanExecuteChanged;
-
-        public bool CanExecute(object e)
-        {
-            return true;
-        }
-
-        public void Execute(object e)
-        {
-            API.SetStopAndPump(GUI.VirtualProperies);
-        }
-    }
-
-    public class SetFirstHandler : System.Windows.Input.ICommand
-    {
-
-        public event EventHandler CanExecuteChanged;
-
-        public bool CanExecute(object e)
-        {
-            return true;
-        }
-
-        public void Execute(object e)
-        {
-            API.SetFirst();
-        }
-    }
-
-    public class SetLastHandler : System.Windows.Input.ICommand
-    {
-
-        public event EventHandler CanExecuteChanged;
-
-        public bool CanExecute(object e)
-        {
-            return true;
-        }
-
-        public void Execute(object e)
-        {
-            API.SetLast();
-        }
-    }
-
-    public class ValidateEntitiesHandler : System.Windows.Input.ICommand
-    {
-
-        public event EventHandler CanExecuteChanged;
-
-        public bool CanExecute(object e)
-        {
-            return true;
-        }
-
-        public void Execute(object e)
-        {
-            API.ValidateEntities();
-        }
-    }
-
-    internal class buildGcodeHandler : System.Windows.Input.ICommand
-    {
-        public event EventHandler CanExecuteChanged;
-
-        public bool CanExecute(object e)
-        {
-            return true;
-        }
-
-        public void Execute(object e)
-        {
-            API.BuildGcode();
+            if (rB != null)
+                ClickEvent?.Invoke(rB);
+            else
+                Global.Editor.WriteMessage("Event for buttons in GUI not work");
         }
     }
 }

@@ -18,10 +18,16 @@ namespace AutoCadGcode
 
         public static Dictionary<ObjectId, UserEntity> UEntitys { get; set; }
 
+        public static void Greetings()
+        {
+            Global.Editor.WriteMessage("AutoCadGcode by Svetoslav Elkin\n");
+        }
+
         public static void Start()
         {
             CreateObjects();
-            CreateHandling();
+            CreateHandlings();
+            CreateGlobalHandlings();
             API.ValidateEntities();
         }
         private static void CreateObjects()
@@ -31,14 +37,20 @@ namespace AutoCadGcode
             ValidationInstance = new Validation();
             GcodeGeneratorInstance = new GcodeGenerator();
         }
-        private static void CreateHandling()
+        private static void CreateHandlings()
         {
             XDataManage.PropertiesChangeEvent += OnChangeProperties;
             API.EntitiesValidateEvent += OnValidateEntities;
-            Global.dB.ObjectAppended += OnDatabaseChanged;
+            Global.DB.ObjectAppended += OnDatabaseChanged;
             //API.DocumentLoadedEvent += SetUserEntitys;
             //TODO
         }
+        private static void CreateGlobalHandlings()
+        {
+            XDataManage.PropertiesChangeEvent += GuiInstance.OnChangeParametersHandler;
+            Validation.ValidateEntitiesEvent += GuiInstance.OnValidationChangingHandler;
+        }
+
         private static void OnDatabaseChanged(object sender, EventArgs e)
         {
             ValidationInstance.isValidated = false;
@@ -53,7 +65,7 @@ namespace AutoCadGcode
             }
             catch(Exception e)
             {
-                Global.editor.WriteMessage(e.ToString());
+                Global.Editor.WriteMessage(e.ToString());
             }
         }
         private static void OnChangeProperties(UserEntity uEntity)
@@ -64,9 +76,9 @@ namespace AutoCadGcode
         {
             if (uEntity != null)
             {
-                using (DocumentLock docLock = Global.doc.LockDocument())
+                using (DocumentLock docLock = Global.Doc.LockDocument())
                 {
-                    using (Transaction acTrans = Global.dB.TransactionManager.StartTransaction())
+                    using (Transaction acTrans = Global.DB.TransactionManager.StartTransaction())
                     {
                         using (Entity temp = acTrans.GetObject(uEntity.ObjectId, OpenMode.ForWrite) as Entity)
                         {
@@ -107,7 +119,7 @@ namespace AutoCadGcode
                         else
                         {
                             UEntitys[uEntity.ObjectId] = uEntity;
-                            Global.editor.WriteMessage("Warrning. UEntity already stored\n");
+                            Global.Editor.WriteMessage("Warrning. UEntity already stored\n");
                         }
                     }
                     else
@@ -117,7 +129,7 @@ namespace AutoCadGcode
                     }
                 }
                 if (trash == true)
-                    Global.editor.WriteMessage("Not all entites in document have available properties\n");
+                    Global.Editor.WriteMessage("Not all entites in document have available properties\n");
             }
             else
                 SetUserEntitys(SelectAllObjectsFromAc()); 
@@ -127,16 +139,16 @@ namespace AutoCadGcode
             List<Entity> list = new List<Entity>();
             try
             {
-                using (Transaction acTrans = Global.tM.StartTransaction())
+                using (Transaction acTrans = Global.TM.StartTransaction())
                 {
-                    BlockTable bTable = acTrans.GetObject(Global.dB.BlockTableId, OpenMode.ForRead) as BlockTable;
+                    BlockTable bTable = acTrans.GetObject(Global.DB.BlockTableId, OpenMode.ForRead) as BlockTable;
 
                     BlockTableRecord bTableRecord = acTrans.GetObject(bTable[BlockTableRecord.ModelSpace],
                         OpenMode.ForRead) as BlockTableRecord;
 
                     foreach (ObjectId objectId in bTableRecord)
                     {
-                        Entity entity = Global.tM.GetObject(objectId, OpenMode.ForRead) as Entity;
+                        Entity entity = Global.TM.GetObject(objectId, OpenMode.ForRead) as Entity;
 
                         list.Add(entity);
                     }

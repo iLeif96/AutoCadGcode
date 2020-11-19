@@ -31,18 +31,19 @@ namespace AutoCadGcode
         public delegate void DocumentLoadedHandler(List<Entity> list = null);
         public static event DocumentLoadedHandler DocumentLoadedEvent;
 
-        public static Editor editor = Application.DocumentManager.MdiActiveDocument.Editor;
+        public static DocumentCollection DocumentManager = Application.DocumentManager;
 
-        public static Database dB = Application.DocumentManager.MdiActiveDocument.Database;
+        public static Editor Editor = Application.DocumentManager.MdiActiveDocument.Editor;
 
-        public static Autodesk.AutoCAD.DatabaseServices.TransactionManager tM = dB.TransactionManager;
+        public static Database DB = Application.DocumentManager.MdiActiveDocument.Database;
 
-        public static Document doc = Application.DocumentManager.MdiActiveDocument;
+        public static Autodesk.AutoCAD.DatabaseServices.TransactionManager TM = DB.TransactionManager;
+
+        public static Document Doc = Application.DocumentManager.MdiActiveDocument;
 
         public void Initialize()
         {
-            Global.editor.WriteMessage("AutoCadGcode by Svetoslav Elkin\n");
-
+            Process.Greetings();
             Process.Start();
             DocumentLoadedEvent?.Invoke();
         }
@@ -50,6 +51,11 @@ namespace AutoCadGcode
         public void Terminate()
         {
             //
+        }
+
+        private void CreateGlobalHandlings()
+        {
+
         }
     }
 }
