@@ -58,9 +58,9 @@ namespace AutoCadGcode
         }
         private static void OnChangeProperties(UserEntity uEntity)
         {
-            OnChangeColor(uEntity);
+            ChangeColor(uEntity);
         }
-        private static void OnChangeColor(UserEntity uEntity)
+        private static void ChangeColor(UserEntity uEntity)
         {
             if (uEntity != null)
             {
@@ -70,12 +70,18 @@ namespace AutoCadGcode
                     {
                         using (Entity temp = acTrans.GetObject(uEntity.ObjectId, OpenMode.ForWrite) as Entity)
                         {
-                            if (uEntity.Properties.Printable == false)
-                                temp.Color = Color.FromRgb(150, 150, 150); //gray
-                            else if (uEntity.Properties.Pumping == true)
-                                temp.Color = Color.FromRgb(50, 200, 50); //green
-                            else
-                                temp.Color = Color.FromRgb(50, 50, 200); //blue
+                            if (uEntity.Properties != null)
+                            {
+                                if (uEntity.Properties.Printable == false)
+                                    temp.Color = Color.FromRgb(150, 150, 150); //gray
+                                else if (uEntity.Properties.Pumping == true)
+                                    temp.Color = Color.FromRgb(50, 200, 50); //green
+                                else
+                                    temp.Color = Color.FromRgb(50, 50, 200); //blue
+                            } else
+                            {
+                                temp.Color = Color.FromRgb(200, 50, 50); //red for invalid objects
+                            }
                         }
                         acTrans.Commit();
                     }
@@ -84,31 +90,37 @@ namespace AutoCadGcode
         }
         private static void SetUserEntitys(List<Entity> list = null)
         {
+            bool trash = false;
             if (list != null)
-                foreach (Entity entity in list)
-                    SetUserEntitys(entity);
-            else
-                SetUserEntitys(SelectAllObjectsFromAc()); 
-        }
-        private static void SetUserEntitys(Entity entity)
-        {
-            if (entity == null)
-                return;
-
-            UserEntity uEntity = XDataManage.getXData(entity);
-
-            if (uEntity != null)
             {
-                if (!UEntitys.ContainsKey(entity.ObjectId))
-                    UEntitys.Add(uEntity.ObjectId, uEntity);
-                else
+                foreach (Entity entity in list)
                 {
-                    UEntitys[uEntity.ObjectId] = uEntity;
-                    Global.editor.WriteMessage("Warrning. Object already stored");
+                    if (entity == null)
+                        return;
+
+                    UserEntity uEntity = XDataManage.getXData(entity);
+
+                    if (uEntity != null)
+                    {
+                        if (!UEntitys.ContainsKey(entity.ObjectId))
+                            UEntitys.Add(uEntity.ObjectId, uEntity);
+                        else
+                        {
+                            UEntitys[uEntity.ObjectId] = uEntity;
+                            Global.editor.WriteMessage("Warrning. UEntity already stored\n");
+                        }
+                    }
+                    else
+                    {
+                        trash = true;
+                        ChangeColor(new UserEntity(entity, null));
+                    }
                 }
+                if (trash == true)
+                    Global.editor.WriteMessage("Not all entites in document have available properties\n");
             }
             else
-                Global.editor.WriteMessage("Not all entites in document have available properties");
+                SetUserEntitys(SelectAllObjectsFromAc()); 
         }
         private static List<Entity> SelectAllObjectsFromAc()
         {
@@ -121,7 +133,6 @@ namespace AutoCadGcode
 
                     BlockTableRecord bTableRecord = acTrans.GetObject(bTable[BlockTableRecord.ModelSpace],
                         OpenMode.ForRead) as BlockTableRecord;
-
 
                     foreach (ObjectId objectId in bTableRecord)
                     {
