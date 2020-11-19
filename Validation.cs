@@ -8,7 +8,6 @@ using System.Threading.Tasks;
 
 namespace AutoCadGcode
 {
-    
     public class Validation
     {
         public delegate void ValidationChangedHandler(bool isValidatied);
