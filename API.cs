@@ -19,6 +19,7 @@ namespace AutoCadGcode
         public delegate void LastChangeHandler(UserEntity userEntity);
         public delegate void OrderChangeHandler(UserEntity userEntity);
         public delegate void StopAndPumpHandler(UserEntity userEntity);
+        public delegate void DisablePumpingHandler(UserEntity userEntity);
         public delegate void EntitiesValidateHandler();
         public delegate void BuildGcodeHandler();
 
@@ -29,6 +30,7 @@ namespace AutoCadGcode
         public static event LastChangeHandler LastChangeEvent;
         public static event OrderChangeHandler OrderChangeEvent;
         public static event StopAndPumpHandler StopAndPumpEvent;
+        public static event DisablePumpingHandler DisablePumpingEvent;
         public static event EntitiesValidateHandler EntitiesValidateEvent;
         public static event BuildGcodeHandler BuildGcodeEvent;
 
@@ -64,9 +66,13 @@ namespace AutoCadGcode
             UserEntity uEntity = XDataManage.getXData(entity);
 
             if (uEntity == null)
-                uEntity = new UserEntity(entity, new Properties());
+                uEntity = UserEntity.Create(entity, new Properties());
+
+            if (uEntity == null)
+                return;
 
             uEntity.Properties.Printable = false;
+            uEntity.Properties.CommandType = CommandType.First;
             uEntity.Properties.First = true;
 
             uEntity = XDataManage.setXData(uEntity);
@@ -90,9 +96,13 @@ namespace AutoCadGcode
             UserEntity uEntity = XDataManage.getXData(entity);
 
             if (uEntity == null)
-                uEntity = new UserEntity(entity, new Properties());
+                uEntity = UserEntity.Create(entity, new Properties());
+
+            if (uEntity == null)
+                return;
 
             uEntity.Properties.Printable = false;
+            uEntity.Properties.CommandType = CommandType.Last;
             uEntity.Properties.Last = true;
 
             uEntity = XDataManage.setXData(uEntity);
@@ -130,16 +140,19 @@ namespace AutoCadGcode
             API.prevOrder = order;
             foreach (Entity entity in list)
             {
-                UserEntity userEntity = XDataManage.getXData(entity);
+                UserEntity uEntity = XDataManage.getXData(entity);
 
-                if (userEntity == null)
-                    userEntity = new UserEntity(entity, new Properties());
+                if (uEntity == null)
+                    uEntity = UserEntity.Create(entity, new Properties());
 
-                userEntity.Properties.Printable = true;
-                userEntity.Properties.Order = order;
+                if (uEntity == null)
+                    continue;
 
-                userEntity = XDataManage.setXData(userEntity);
-                OrderChangeEvent?.Invoke(userEntity);
+                uEntity.Properties.Printable = true;
+                uEntity.Properties.Order = order;
+
+                uEntity = XDataManage.setXData(uEntity);
+                OrderChangeEvent?.Invoke(uEntity);
             }
         }
 
@@ -166,17 +179,65 @@ namespace AutoCadGcode
             
             foreach (Entity entity in list)
             {
-                UserEntity userEntity = XDataManage.getXData(entity);
+                UserEntity uEntity = XDataManage.getXData(entity);
 
-                if (userEntity == null)
-                    userEntity = new UserEntity(entity, new Properties());
+                if (uEntity == null)
+                    uEntity = UserEntity.Create(entity, new Properties());
 
-                userEntity.Properties.Printable = false;
-                userEntity.Properties.Command = true;
-                userEntity.Properties.StopAndPump = stopAndPump;
+                if (uEntity == null)
+                    continue;
 
-                userEntity = XDataManage.setXData(userEntity);
-                StopAndPumpEvent?.Invoke(userEntity);
+                uEntity.Properties.Printable = false;
+                uEntity.Properties.Command = true;
+                uEntity.Properties.CommandType = CommandType.StopAndPump;
+                uEntity.Properties.StopAndPump = stopAndPump;
+
+                uEntity = XDataManage.setXData(uEntity);
+                StopAndPumpEvent?.Invoke(uEntity);
+            }
+        }
+
+        [CommandMethod("SETDISABLEPUMPING", CommandFlags.UsePickSet)]
+        public static void SetDisablePumping(Properties properties = null)
+        {
+            bool disablePumping = false;
+
+            PromptSelectionResult acSSPrompt = Global.Doc.Editor.GetSelection();
+            List<Entity> list = ListFromSelecion(acSSPrompt);
+            if (list.Count > 1)
+                return;
+
+            if (properties == null)
+            {
+                PromptIntegerOptions pOpts = new PromptIntegerOptions(
+                        "Введите 1, чтобы отключить подач бетона после этой точки. 0, чтобы восстановить подачу: ");
+                pOpts.LowerLimit = 0;
+                pOpts.UpperLimit = 1;
+                PromptIntegerResult promptInteger = Global.Doc.Editor.GetInteger(pOpts);
+                disablePumping = promptInteger.Value == 1 ? true : false;
+            }
+            else
+            {
+                disablePumping = properties.DisablePumping;
+            }
+
+            foreach (Entity entity in list)
+            {
+                UserEntity uEntity = XDataManage.getXData(entity);
+
+                if (uEntity == null)
+                    uEntity = UserEntity.Create(entity, new Properties());
+
+                if (uEntity == null)
+                    continue;
+
+                uEntity.Properties.Printable = false;
+                uEntity.Properties.Command = true;
+                uEntity.Properties.CommandType = CommandType.DisablePumping;
+                uEntity.Properties.DisablePumping = disablePumping;
+
+                uEntity = XDataManage.setXData(uEntity);
+                DisablePumpingEvent?.Invoke(uEntity);
             }
         }
 
@@ -199,7 +260,10 @@ namespace AutoCadGcode
             {
                 uEntity = XDataManage.getXData(entity);
                 if (uEntity == null)
-                    uEntity = new UserEntity(entity, new Properties());
+                    uEntity = UserEntity.Create(entity, new Properties());
+
+                if (uEntity == null)
+                    continue;
 
                 uEntity.Properties.Printable = true;
 
@@ -228,7 +292,10 @@ namespace AutoCadGcode
             {
                 uEntity = XDataManage.getXData(entity);
                 if (uEntity == null)
-                    uEntity = new UserEntity(entity, new Properties());
+                    uEntity = UserEntity.Create(entity, new Properties());
+
+                if (uEntity == null)
+                    continue;
 
                 uEntity.Properties.Printable = false;
                 uEntity.Properties.Pumping = false;
@@ -258,7 +325,10 @@ namespace AutoCadGcode
             {
                 uEntity = XDataManage.getXData(entity);
                 if (uEntity == null)
-                    uEntity = new UserEntity(entity, new Properties());
+                    uEntity = UserEntity.Create(entity, new Properties());
+
+                if (uEntity == null)
+                    continue;
 
                 uEntity.Properties.Printable = true;
                 uEntity.Properties.Pumping = true;
@@ -288,7 +358,10 @@ namespace AutoCadGcode
             {
                 uEntity = XDataManage.getXData(entity);
                 if (uEntity == null)
-                    uEntity = new UserEntity(entity, new Properties());
+                    uEntity = UserEntity.Create(entity, new Properties());
+
+                if (uEntity == null)
+                    continue;
 
                 uEntity.Properties.Printable = true;
                 uEntity.Properties.Pumping = false;
@@ -310,9 +383,12 @@ namespace AutoCadGcode
                     return;
             }
 
+            UserEntity uEntity;
             foreach (Entity entity in list)
             {
-                XDataManage.setXData(new UserEntity(entity, new Properties()));
+                uEntity = UserEntity.Create(entity, new Properties());
+                if (uEntity != null)
+                    XDataManage.setXData(uEntity);
             }
         }
 

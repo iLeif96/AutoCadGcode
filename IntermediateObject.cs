@@ -34,6 +34,20 @@ namespace AutoCadGcode
                 return Vertexes[Vertexes.Count - 1];
             }
         }
+
+        public Point3d CenterPoint
+        {
+            get
+            {
+                if (IsEmpty || Type == null)
+                    throw new Exception("Attempt to acccess to empty object");
+                else if (Type != AvailableTypes.ARC)
+                    throw new Exception("Attempt to acccess not to ARC");
+
+                return Vertexes[1];
+            }
+        }
+
         public bool IsEmpty { get; private set; } = false;
         public IntermediateObject()
         {

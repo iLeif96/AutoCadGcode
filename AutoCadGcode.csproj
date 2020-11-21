@@ -85,6 +85,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="API.cs" />
+    <Compile Include="CommandType.cs" />
     <Compile Include="GcodeGenerator.cs" />
     <Compile Include="GUI.cs" />
     <Compile Include="IntermediateObject.cs" />
@@ -104,6 +105,11 @@
     <Resource Include="ico\PumpingFalse_32.png" />
     <Resource Include="ico\PumpingTrue_16.png" />
     <Resource Include="ico\PumpingTrue_32.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="start.scr">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

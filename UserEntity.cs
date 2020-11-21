@@ -10,6 +10,8 @@ namespace AutoCadGcode
 {
     public class UserEntity
     {
+        public delegate void WrongTypeDetectedHandler(ObjectId objectId);
+        public static event WrongTypeDetectedHandler WrongTypeDetectedEvent;
         public Entity Entity { get; set; }
         public Properties Properties { get; set; }
         public Type Type { get { return Entity.GetType(); } }
@@ -44,21 +46,43 @@ namespace AutoCadGcode
         /// </summary>
         private bool isNeedReverse = false;
 
-        public UserEntity(Entity entity, Properties properties)
+        private UserEntity(Entity entity, Properties properties)
         {
-            if (!CheckType(entity.GetType()))
-                throw new Exception("User entity can be only Arc, Line or Polyline");
-
             this.Entity = entity;
             this.Properties = properties;
             this.ObjectId = entity.ObjectId;
         }
-        public static bool CheckType(Type type)
+        public static UserEntity Create(Entity entity, Properties properties)
+        {
+            try
+            {
+                if(CheckType(entity))
+                    return new UserEntity(entity, properties);
+            }
+            catch (Exception e)
+            {
+                Global.Editor.WriteMessage(e.ToString());
+            }
+            return null;
+        }
+        public static bool CheckType(Entity entity)
         {
             bool result = false;
+            if (entity == null)
+                return result;
 
+            Type type = entity.GetType();
             if (type ==  AvailableTypes.LINE || type == AvailableTypes.POLYLINE || type == AvailableTypes.ARC)
                 result = true;
+            else if (type == typeof(Polyline2d) || type == typeof(Polyline3d))
+                Global.Editor.WriteMessage("ERROR. You have to convert polyline2d or polyline3d to polyline\n");
+            else
+                Global.Editor.WriteMessage("User entity can be only Arc, Line or Polyline\n");
+
+            //throw new Exception("User entity can be only Arc, Line or Polyline");
+
+            if (!result)
+                WrongTypeDetectedEvent?.Invoke(entity.ObjectId);
 
             return result;
         }
@@ -117,9 +141,9 @@ namespace AutoCadGcode
             return list;
         }
 
-        public bool ConvertToPolyline()
+        public UserEntity ConvertToPolyline()
         {
-            bool result = CheckType(Type);
+            bool result = CheckType(Entity);
 
             if (this.Entity.GetType() != AvailableTypes.POLYLINE)
             {
@@ -145,7 +169,11 @@ namespace AutoCadGcode
 
                 }
             }
-            return result;
+
+            if (result == true)
+                return this;
+            else
+                return null;
         }
 
         /// <summary>

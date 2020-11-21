@@ -12,7 +12,7 @@ namespace AutoCadGcode
 {
     public class Properties
     {
-        private static readonly string _key = "version_2.2";
+        private static readonly string _key = "version_2.3";
 
         public string KEY 
         {
@@ -70,6 +70,19 @@ namespace AutoCadGcode
                 PropertiesList[(int)Fields.Command] = value;
             }
         }
+
+        public CommandType CommandType
+        {
+            get
+            {
+                return (CommandType)(PropertiesList[(int)Fields.CommandType]);
+            }
+            set
+            {
+                PropertiesList[(int)Fields.CommandType] = value;
+            }
+        }
+
         public int Order
         {
             get
@@ -91,7 +104,24 @@ namespace AutoCadGcode
             }
             set
             {
+                if (Command == true)
+                    CommandType = CommandType.StopAndPump;
+
                 PropertiesList[(int)Fields.StopAndPump] = value;
+            }
+        }
+        public bool DisablePumping
+        {
+            get
+            {
+                return Convert.ToBoolean(PropertiesList[(int)Fields.DisablePumping]);
+            }
+            set
+            {
+                if (Command == true)
+                    CommandType = CommandType.DisablePumping;
+
+                PropertiesList[(int)Fields.DisablePumping] = value;
             }
         }
         public bool First
@@ -126,7 +156,7 @@ namespace AutoCadGcode
         }
 
 
-        enum Fields { KEY, Pumping, Printable, Order, Command, StopAndPump, First, Last }
+        enum Fields { KEY, Pumping, Printable, Order, Command, CommandType, DisablePumping, StopAndPump, First, Last }
 
         public object[] PropertiesList = new object[Enum.GetValues(typeof(Fields)).Length];
 
@@ -138,6 +168,8 @@ namespace AutoCadGcode
             Printable = true;
             Order = 0;
             Command = false;
+            CommandType = CommandType.None;
+            DisablePumping = false;
             StopAndPump = 0;
             First = false;
             Last = false;
@@ -176,6 +208,8 @@ namespace AutoCadGcode
                     props.PropertiesList[i] = Convert.ToDouble(arr[i].Value);
                 else if (type == typeof(string))
                     props.PropertiesList[i] = Convert.ToString(arr[i].Value);
+                else if (type == typeof(CommandType))
+                    props.PropertiesList[i] = ParseEnum<CommandType>(arr[i].Value.ToString());
                 else
                     throw new Exception("Unresolved type in properties");
 
@@ -202,6 +236,10 @@ namespace AutoCadGcode
             return props;
         }
 
+        private static T ParseEnum<T>(string value)
+        {
+            return (T)Enum.Parse(typeof(T), value, true);
+        }
         public override string ToString()
         {
             string str = "Properties: \n";

@@ -60,6 +60,7 @@ namespace AutoCadGcode
 
         protected RibbonSpinner stopAndPumpSpinner = new RibbonSpinner();
         protected RibbonButton stopAndPumpButton = new RibbonButton();
+        protected RibbonButton disablePumpingButton = new RibbonButton();
         protected RibbonButton setFirstButton = new RibbonButton();
         protected RibbonButton setLastButton = new RibbonButton();
         protected RibbonButton setNonPrintableButton = new RibbonButton();
@@ -162,6 +163,13 @@ namespace AutoCadGcode
             stopAndPumpButton.ShowText = true;
             buttonsList.Add(stopAndPumpButton);
 
+            disablePumpingButton.Name = "disablePumpingButton";
+            disablePumpingButton.Id = "_disablePumpingButton";
+            disablePumpingButton.Size = RibbonItemSize.Standard;
+            disablePumpingButton.Text = "Вкл/Выкл подачу";
+            disablePumpingButton.ShowText = true;
+            buttonsList.Add(disablePumpingButton);
+
             setFirstButton.Name = "setFirstButton";
             setFirstButton.Id = "_setFirst";
             setFirstButton.Size = RibbonItemSize.Standard;
@@ -177,7 +185,7 @@ namespace AutoCadGcode
             buttonsList.Add(setLastButton);
 
             setNonPrintableButton.Name = "setNonPrintableButton";
-            setNonPrintableButton.Id = "_setOrderButton";
+            setNonPrintableButton.Id = "_setNonPrintableButton";
             setNonPrintableButton.Size = RibbonItemSize.Large;
             setNonPrintableButton.Text = "В непечатную\nлинию";
             setNonPrintableButton.ShowText = true;
@@ -189,6 +197,8 @@ namespace AutoCadGcode
             rbNotPrintablePanelSource.Items.Add(setFirstButton);
             rbNotPrintablePanelSource.Items.Add(new RibbonSeparator());
             rbNotPrintablePanelSource.Items.Add(setLastButton);
+            rbNotPrintablePanelSource.Items.Add(new RibbonSeparator());
+            rbNotPrintablePanelSource.Items.Add(disablePumpingButton);
             rbNotPrintablePanelSource.Items.Add(new RibbonRowBreak());
             rbNotPrintablePanelSource.Items.Add(stopAndPumpSpinner);
             rbNotPrintablePanelSource.Items.Add(stopAndPumpButton);
@@ -211,9 +221,6 @@ namespace AutoCadGcode
             buildGcodeButton.Text = "Построить Gcode";
             buildGcodeButton.ShowText = true;
             buttonsList.Add(buildGcodeButton);
-
-            
-            
 
             rbValidatePanelSource.Title = "Валидация и запуск";
             rbValidatePanelSource.Items.Add(validateEntitiesButton);
@@ -394,6 +401,8 @@ namespace AutoCadGcode
                 API.SetOrder(VirtualProperies);
             else if (rB.Name == stopAndPumpButton.Name)
                 API.SetStopAndPump(VirtualProperies);
+            else if (rB.Name == disablePumpingButton.Name)
+                API.SetDisablePumping(VirtualProperies);
             else if (rB.Name == setFirstButton.Name)
                 API.SetFirst();
             else if (rB.Name == setLastButton.Name)

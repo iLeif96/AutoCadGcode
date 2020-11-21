@@ -11,12 +11,14 @@ namespace AutoCadGcode
     {
         public bool Pumping { get; set; } = false;
         public bool Command { get; set; } = false;
+        public bool DisablePumping { get; set; } = false;
         public int Order { get; set; } = 0;
         public int StopAndPump { get; set; } = 0;
+        public CommandType CommandType { get; set; } = CommandType.None;
 
-        public ValidProperties()
+        public ValidProperties(CommandType cType)
         {
-
+            CommandType = cType;
         }
 
         public ValidProperties(Properties props)
@@ -25,6 +27,8 @@ namespace AutoCadGcode
             Order = props.Order;
             Command = props.Command;
             StopAndPump = props.StopAndPump;
+            DisablePumping = props.DisablePumping;
+            CommandType = props.CommandType;
         }
     }
 }

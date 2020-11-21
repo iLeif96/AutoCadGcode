@@ -28,8 +28,7 @@ namespace AutoCadGcode
         }
 
         public List<ValidatedObject> validList = new List<ValidatedObject>();
-        private List<UserEntity> forPrint = new List<UserEntity>();
-        private List<UserEntity> commands = new List<UserEntity>();
+        public ValidatedObject FirstLine;
 
         public void StartValidation(List<UserEntity> uEntitys)
         {
@@ -40,11 +39,12 @@ namespace AutoCadGcode
 
             //Clear all supported lists
             validList.Clear();
-            forPrint.Clear();
-            commands.Clear();
+            List<UserEntity> forPrint = new List<UserEntity>();
+            List<UserEntity> commands = new List<UserEntity>();
+
+            FirstLine = null;
 
             //Set temporary objects
-            Entity temp = null;
             UserEntity firstEntity = null;
             UserEntity lastEntity = null;
 
@@ -60,7 +60,7 @@ namespace AutoCadGcode
                 /**
                  * Checking available types for entities 
                  */
-                if (UserEntity.CheckType(uEntity.Type) == false)
+                if (UserEntity.CheckType(uEntity.Entity) == false)
                     throw new Exception("For generating Gcode must using only Line, Polyline and Arc entities\n");
 
                 /**
@@ -85,7 +85,7 @@ namespace AutoCadGcode
                     /**
                     * Convert all printable entities to polylines
                     */
-                    if (!uEntity.ConvertToPolyline())
+                    if (uEntity.ConvertToPolyline() == null)
                         throw new Exception("Problem with converting entities to polyline\n");
                     /**
                      * Filling lists
@@ -110,6 +110,10 @@ namespace AutoCadGcode
             /**
              * Checking values after prevent validation
              */
+
+            if (firstEntity == null || lastEntity == null)
+                throw new Exception("You have to define First line and last line");
+
             if (forPrint.Count == 0)
                 throw new Exception("There are no printable entities\n");
             else if (forPrint.Count == 1)
@@ -158,6 +162,7 @@ namespace AutoCadGcode
             index = forPrint.Last().IndexOfTouching(lastEntity.StartPoint);
             if (index == -1)
                 index = forPrint.Last().IndexOfTouching(lastEntity.EndPoint);
+
             if (index == -1)
                 throw new Exception("Last line not connected to last entity\n");
 
@@ -228,7 +233,7 @@ namespace AutoCadGcode
                 if (index != -1)
                     validList.Insert(index, new ValidatedObject(new ValidProperties(uEntity.Properties)));
             }
-            
+
             isValidated = true;
         }
     }

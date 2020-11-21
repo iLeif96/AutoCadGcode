@@ -98,7 +98,7 @@ namespace AutoCadGcode
 
                 props = Properties.FromBuffer(rb);
                 acTrans.Abort();
-                return new UserEntity(_entity, props);
+                return UserEntity.Create(_entity, props);
             }
         }
     }
