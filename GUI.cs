@@ -12,7 +12,7 @@ using Autodesk.AutoCAD.EditorInput;
 using System.Windows.Input;
 using Autodesk.AutoCAD.ApplicationServices;
 
-namespace AutoCadGcode
+namespace AutoCadGcode 
 {
     public class GUI
     {
@@ -439,7 +439,9 @@ namespace AutoCadGcode
     /// </summary>
     public class ButtonClickHandler : System.Windows.Input.ICommand
     {
+#pragma warning disable CS0067 // Событие "ButtonClickHandler.CanExecuteChanged" никогда не используется.
         public event EventHandler CanExecuteChanged;
+#pragma warning restore CS0067 // Событие "ButtonClickHandler.CanExecuteChanged" никогда не используется.
         public delegate void ClickHandler(RibbonButton rB);
         public event ClickHandler ClickEvent;
 

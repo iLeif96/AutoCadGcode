@@ -110,11 +110,11 @@ namespace AutoCadGcode
         public int IndexOfTouching(Point3d pt)
         {
             int index = -1;
-            if ((Math.Abs(StartPoint.X) - Math.Abs(pt.X) < Global.HYSTERESIS) &&
-                (Math.Abs(StartPoint.Y) - Math.Abs(pt.Y) < Global.HYSTERESIS))
+            if ((Math.Abs(Math.Abs(StartPoint.X) - Math.Abs(pt.X)) < Global.HYSTERESIS) &&
+                (Math.Abs(Math.Abs(StartPoint.Y) - Math.Abs(pt.Y)) < Global.HYSTERESIS))
                 index = 0;
-            else if ((Math.Abs(EndPoint.X) - Math.Abs(pt.X) < Global.HYSTERESIS) &&
-                (Math.Abs(EndPoint.Y) - Math.Abs(pt.Y) < Global.HYSTERESIS))
+            else if ((Math.Abs(Math.Abs(EndPoint.X) - Math.Abs(pt.X)) < Global.HYSTERESIS) &&
+                (Math.Abs(Math.Abs(EndPoint.Y) - Math.Abs(pt.Y)) < Global.HYSTERESIS))
                 index = 1;
 
             return index;

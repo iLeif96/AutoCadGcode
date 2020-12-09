@@ -97,7 +97,6 @@ namespace AutoCadGcode
 
             UserEntity.CheckType(entity);
         }
-
         private static void OnWrongDetected(ObjectId objectId)
         {
             if (objectId != null)

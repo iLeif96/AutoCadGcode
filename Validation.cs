@@ -154,7 +154,7 @@ namespace AutoCadGcode
                     index = forPrint[i + 1].IndexOfTouching(forPrint[i].EndPoint);
                 if (index == -1)
                     throw new Exception("Entity with Order [" +
-                        currOrder + "] has not connected to next segment\n");
+                        forPrint[i].Properties.Order + "] has not connected to next segment\n");
                 else if (index > 0)
                     forPrint[i + 1].MarkToReverse();
             }
@@ -205,25 +205,26 @@ namespace AutoCadGcode
              * Checking command lines
              */
 
-            foreach (UserEntity uEntity in commands)
+            foreach (UserEntity command in commands)
             {
                 /**
                 * Checking notPrintable lines touching to printable entities
                 */
                 //Use for check that only one point of line touched to printable segments
+                //TODO: Apply command to last point of segment
                 index = -1;
 
                 for (int i = 0; i < validList.Count; i++)
                 {
                     if (validList[i].IsEmpty == false)
                     {
-                        if (validList[i].IndexOfTouching(uEntity.StartPoint) == 0)
+                        if (validList[i].IndexOfTouching(command.StartPoint) == 0)
                             index = i;
 
-                        if (validList[i].IndexOfTouching(uEntity.EndPoint) == 0)
+                        if (validList[i].IndexOfTouching(command.EndPoint) == 0)
                         {
                             if (index != -1)
-                                throw new Exception("Command line has to touch printing segments only once\n");
+                                throw new Exception("Command line has to touch printing segment only once\n");
 
                             index = i;
                         }
@@ -231,7 +232,7 @@ namespace AutoCadGcode
                 }
 
                 if (index != -1)
-                    validList.Insert(index, new ValidatedObject(new ValidProperties(uEntity.Properties)));
+                    validList.Insert(index, new ValidatedObject(new ValidProperties(command.Properties)));
             }
 
             isValidated = true;
